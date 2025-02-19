@@ -1,0 +1,43 @@
+version: "3.8"
+
+services:
+  redis:
+    image: redis:alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    environment:
+      - REDIS_PASSWORD=Grp0C1a_36_3io
+      - REDIS_HOST=193.146.34.10
+    volumes:
+      - redis_data:/data
+
+  backend:
+    build: ./backend
+    container_name: backend
+    ports:
+      - "3000:3000"
+    environment:
+      - REDIS_HOST=193.146.34.10
+      - REDIS_PORT=6379
+      - REDIS_DB=0
+      - REDIS_PASSWORD=Grp0C1a_36_3io
+    depends_on:
+      - redis
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "3001:3000"
+    environment:
+      - VITE_API_URL=http://backend:3000
+    depends_on:
+      - backend
+    stdin_open: true
+    tty: true
+
+volumes:
+  redis_data:

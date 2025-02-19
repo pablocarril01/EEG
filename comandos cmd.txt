@@ -1,0 +1,14 @@
+docker exec -it redis redis-cli -h 193.146.34.10 -p 6379 -a Grp0C1a_36_3io
+docker exec -it redis redis-cli
+
+SCAN 0 MATCH proyecto:* COUNT 100
+
+
+docker-compose down
+docker-compose build
+docker-compose up -d
+docker stop $(docker ps -q)
+
+docker ps
+
+node generateData
