@@ -53,7 +53,7 @@ const App: React.FC = () => {
     <div>
       <div>
         <label>
-          Proyecto ID:
+          Proyecto:
           <input
             type="text"
             value={proyectoId}
@@ -63,7 +63,7 @@ const App: React.FC = () => {
       </div>
       <div>
         <label>
-          Usuario ID:
+          Usuario:
           <input
             type="text"
             value={usuarioId}
@@ -82,7 +82,7 @@ const App: React.FC = () => {
       <ChartComponent data={chartData} />
       {lastData && (
         <div>
-          <h3>Último Dato:</h3>
+          <h3>Último envío:</h3>
           <pre>{JSON.stringify(lastData)}</pre>
         </div>
       )}
