@@ -1,9 +1,33 @@
-1.- git clone https://github.com/pablocarril01/EEG.git
+# EEG PEPI 🧠
 
-2.- añadir .env a la raíz
+## Pasos a realizar para clonar correctamente:
 
-3.- ejecutar npm install en la raíz
+1. Clona el repositorio:
 
-3.- ejecutar docker-compose build
+   ```bash
+   git clone https://github.com/pablocarril01/EEG.git
 
-4.- ejecutar docker-compose up -d
+   ```
+
+2. Añade .env a la raíz
+
+3. Instalar dependencias (en la raíz):
+
+   ```bash
+   npm i
+
+   ```
+
+4. Abrir Docker
+
+5. Montar proyecto en Docker
+
+   ```bash
+   docker-compose build
+
+   ```
+
+6. Lanzar proyecto
+   ```bash
+   docker-compose up -d
+   ```
