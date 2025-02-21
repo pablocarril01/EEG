@@ -7,8 +7,8 @@ services:
     ports:
       - "6379:6379"
     environment:
-      - REDIS_PASSWORD=Grp0C1a_36_3io
-      - REDIS_HOST=193.146.34.10
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
     volumes:
       - redis_data:/data
 
@@ -18,10 +18,10 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - REDIS_HOST=193.146.34.10
-      - REDIS_PORT=6379
-      - REDIS_DB=0
-      - REDIS_PASSWORD=Grp0C1a_36_3io
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_DB=${REDIS_DB}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     depends_on:
       - redis
 
