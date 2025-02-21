@@ -2,14 +2,14 @@
 
 ## Pasos a realizar para clonar correctamente:
 
-1. Clona el repositorio:
+1. Clonar el repositorio:
 
    ```bash
    git clone https://github.com/pablocarril01/EEG.git
 
    ```
 
-2. Añade .env a la raíz
+2. Añadir .env a la raíz
 
 3. Instalar dependencias (en la raíz):
 
