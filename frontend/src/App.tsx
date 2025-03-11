@@ -1,91 +1,147 @@
 import React, { useState, useEffect } from "react";
 import ChartComponent from "./components/ChartComponent";
+import axios from "axios";
 
 const App: React.FC = () => {
   const [proyectoId, setProyectoId] = useState("");
   const [usuarioId, setUsuarioId] = useState("");
   const [chartData, setChartData] = useState<number[][]>([]);
-  const [lastData, setLastData] = useState<number[] | null>(null);
-  const [isFetching, setIsFetching] = useState(false); // Estado para controlar el refresco automático
+  const [isFetching, setIsFetching] = useState(false);
 
   const fetchData = async () => {
     try {
-      const response = await fetch(
+      if (!proyectoId || !usuarioId) return;
+
+      const response = await axios.get(
         `http://localhost:3000/api/hexValues/${proyectoId}/${usuarioId}`
       );
-      if (!response.ok) {
-        throw new Error("Error en la respuesta del servidor");
-      }
-      const rawData: string[] = await response.json();
-      console.log("Datos recibidos:", rawData);
+      const rawData: number[][] = response.data.datos;
 
-      if (!Array.isArray(rawData)) {
-        throw new Error("Los datos recibidos no son un array");
+      console.log("📌 Datos recibidos:", rawData);
+
+      if (!Array.isArray(rawData) || rawData.length === 0) {
+        throw new Error("Los datos recibidos no son válidos");
       }
 
-      // Convertir datos de hex a decimal
-      const formattedData = rawData.map((hexString) =>
-        hexString.split(";").map((val) => parseInt(val, 16))
-      );
-
-      setChartData(formattedData);
-      setLastData(formattedData[formattedData.length - 1] || null);
+      setChartData(rawData);
     } catch (error) {
-      console.error("Error al obtener los datos:", error);
+      console.error("❌ Error al obtener los datos:", error);
     }
   };
 
-  // Usar useEffect para ejecutar fetchData cada 100 ms cuando isFetching es true
   useEffect(() => {
-    if (isFetching && proyectoId && usuarioId) {
-      const intervalId = setInterval(fetchData, 100); // Ejecutar fetchData cada 100 ms
-
-      // Limpiar el intervalo cuando el componente se desmonte o cuando isFetching cambie a false
+    if (isFetching) {
+      const intervalId = setInterval(fetchData, 500);
       return () => clearInterval(intervalId);
     }
   }, [isFetching, proyectoId, usuarioId]);
 
-  const handleStartFetching = () => {
-    setIsFetching(true); // Activar el refresco automático
-  };
-
   return (
-    <div>
-      <div>
-        <label>
+    <div
+      style={{
+        maxWidth: "1000px",
+        margin: "20px auto",
+        textAlign: "center",
+        padding: "20px",
+        backgroundColor: "#121212",
+        color: "#E0E0E0",
+        fontFamily: "'Inter', sans-serif",
+      }}
+    >
+      {/* 🔹 Inputs alineados en modo oscuro */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "20px",
+          flexWrap: "wrap",
+        }}
+      >
+        <label style={{ fontSize: "18px" }}>
           Proyecto ID:
           <input
             type="text"
             value={proyectoId}
             onChange={(e) => setProyectoId(e.target.value)}
+            style={{
+              width: "150px",
+              padding: "8px",
+              backgroundColor: "#222",
+              color: "#E0E0E0",
+              border: "1px solid #555",
+              borderRadius: "4px",
+              marginLeft: "5px",
+            }}
           />
         </label>
-      </div>
-      <div>
-        <label>
+        <label style={{ fontSize: "18px" }}>
           Usuario ID:
           <input
             type="text"
             value={usuarioId}
             onChange={(e) => setUsuarioId(e.target.value)}
+            style={{
+              width: "150px",
+              padding: "8px",
+              backgroundColor: "#222",
+              color: "#E0E0E0",
+              border: "1px solid #555",
+              borderRadius: "4px",
+              marginLeft: "5px",
+            }}
           />
         </label>
       </div>
-      <div>
-        <button onClick={handleStartFetching} disabled={isFetching}>
+
+      {/* 🔹 Botones oscuros */}
+      <div
+        style={{
+          marginTop: "20px",
+          display: "flex",
+          justifyContent: "center",
+          gap: "15px",
+        }}
+      >
+        <button
+          onClick={() => setIsFetching(true)}
+          disabled={isFetching}
+          style={{
+            padding: "12px 20px",
+            backgroundColor: isFetching ? "#4CAF50" : "#007BFF",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: isFetching ? "default" : "pointer",
+            opacity: isFetching ? 0.7 : 1,
+            transition: "0.3s",
+            fontSize: "16px",
+          }}
+        >
           {isFetching ? "Actualizando..." : "Cargar Datos"}
         </button>
-        <button onClick={() => setIsFetching(false)} disabled={!isFetching}>
-          Detener Actualización
+        <button
+          onClick={() => setIsFetching(false)}
+          disabled={!isFetching}
+          style={{
+            padding: "12px 20px",
+            backgroundColor: "#E63946",
+            color: "white",
+            border: "none",
+            borderRadius: "5px",
+            cursor: !isFetching ? "default" : "pointer",
+            opacity: !isFetching ? 0.5 : 1,
+            transition: "0.3s",
+            fontSize: "16px",
+          }}
+        >
+          Detener
         </button>
       </div>
-      <ChartComponent data={chartData} />
-      {lastData && (
-        <div>
-          <h3>Último Dato:</h3>
-          <pre>{JSON.stringify(lastData)}</pre>
-        </div>
-      )}
+
+      {/* 🔹 Gráficos en modo oscuro */}
+      <div style={{ marginTop: "30px", width: "100%" }}>
+        <ChartComponent data={chartData} />
+      </div>
     </div>
   );
 };

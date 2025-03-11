@@ -4,7 +4,7 @@ import { AppService } from './app.service';
 import { RedisModule } from './redis/redis.module';
 
 @Module({
-  imports: [RedisModule], // Importamos RedisModule
+  imports: [RedisModule],
   controllers: [AppController],
   providers: [AppService],
 })

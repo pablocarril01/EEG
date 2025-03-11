@@ -11,7 +11,7 @@ import {
 
 interface ChartData {
   name: string;
-  [key: string]: string | number; // Se permite que los valores sean número o string
+  [key: string]: number | string;
 }
 
 interface ChartComponentProps {
@@ -20,10 +20,10 @@ interface ChartComponentProps {
 
 const ChartComponent: React.FC<ChartComponentProps> = ({ data }) => {
   if (!data || data.length === 0) {
-    return <p>No hay datos para mostrar</p>;
+    return <p style={{ color: "#E0E0E0" }}>No hay datos para mostrar</p>;
   }
 
-  // Transformar los datos en el formato adecuado para recharts
+  // 🔹 Transformar los datos en el formato adecuado para Recharts
   const transformedData: ChartData[] = data.map((entry, index) => {
     const formattedEntry: ChartData = { name: `Muestra ${index + 1}` };
 
@@ -34,57 +34,59 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ data }) => {
     return formattedEntry;
   });
 
-  console.log("Datos transformados para la gráfica:", transformedData);
+  console.log("📌 Datos transformados para la gráfica:", transformedData);
 
-  // Lista fija de colores para los 8 canales
+  // 🔹 Lista de colores para cada canal
   const channelColors = [
-    "#8884d8", // Canal 1
-    "#82ca9d", // Canal 2
-    "#ff7300", // Canal 3
-    "#a4de6c", // Canal 4
-    "#d0ed57", // Canal 5
-    "#ffc658", // Canal 6
-    "#8dd1e1", // Canal 7
-    "#83a6ed", // Canal 8
+    "#66C2FF",
+    "#7FFF7F",
+    "#FFD700",
+    "#FF99CC",
+    "#FFA07A",
+    "#DDA0DD",
+    "#40E0D0",
+    "#B0E0E6",
   ];
 
-  // Obtener la lista de canales (asumiendo que hay 8 canales)
+  // 🔹 Lista de canales (8 en total)
   const channels = Array.from({ length: 8 }, (_, i) => `Canal ${i + 1}`);
 
   return (
     <div
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(4, 1fr)", // 4 columnas
-        gridTemplateRows: "repeat(2, 1fr)", // 2 filas
+        gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
         gap: "20px",
-        width: "100%", // Ocupar todo el ancho disponible
-        maxWidth: "1800px", // Limitar el ancho máximo para evitar que se estire demasiado
-        margin: "0 auto", // Centrar el contenedor en la pantalla
+        width: "100%",
+        maxWidth: "1200px",
+        margin: "0 auto",
       }}
     >
       {channels.map((channel, i) => (
         <div
           key={i}
           style={{
-            border: "1px solid #ccc",
+            border: "1px solid #444",
             padding: "10px",
             borderRadius: "5px",
-            width: "100%", // Asegurar que cada gráfica ocupe el ancho completo de su celda
+            backgroundColor: "#222",
+            textAlign: "center",
+            color: "#E0E0E0",
           }}
         >
           <h3>{channel}</h3>
-          <ResponsiveContainer width="100%" height={200}>
+          <ResponsiveContainer width="100%" height={250}>
             <LineChart data={transformedData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
+              <CartesianGrid stroke="#555" strokeDasharray="3 3" />
+              <XAxis dataKey="name" stroke="#E0E0E0" />
+              <YAxis stroke="#E0E0E0" />
               <Tooltip />
               <Line
                 type="monotone"
                 dataKey={channel}
-                stroke={channelColors[i]} // Usar el color fijo para este canal
+                stroke={channelColors[i]}
                 dot={false}
+                isAnimationActive={false}
               />
             </LineChart>
           </ResponsiveContainer>

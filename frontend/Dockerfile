@@ -1,14 +1,14 @@
 # Usar una imagen base de Node.js
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Establecer el directorio de trabajo
 WORKDIR /app
 
 # Copiar los archivos de configuración
-COPY package.json yarn.lock* ./
+COPY package.json package-lock.json ./
 
 # Instalar dependencias
-RUN npm install
+RUN npm ci --legacy-peer-deps
 
 # Copiar el resto del código
 COPY . .

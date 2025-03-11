@@ -1,36 +1,41 @@
+import { Injectable } from '@nestjs/common';
 import { createClient } from 'redis';
-const redis = require('redis');
 
-export const redisClient = redis.createClient({
-  socket: {
-    host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT,
-    db: process.env.REDIS_DB,
-  },
-  password: process.env.REDIS_PASSWORD,
-});
+@Injectable()
+export class RedisProvider {
+  private redisClient;
 
-redisClient.on('error', (err) => console.error('Redis error:', err));
+  constructor() {
+    this.redisClient = createClient({
+      socket: {
+        host: process.env.REDIS_HOST || 'localhost',
+        port: Number(process.env.REDIS_PORT) || 6379,
+      },
+      password: process.env.REDIS_PASSWORD || '',
+    });
 
-export const connectRedis = async () => {
-  try {
-    if (!redisClient.isOpen) {
-      await redisClient.connect();
+    this.redisClient.on('error', (err) =>
+      console.error('❌ Redis error:', err),
+    );
+  }
+
+  async connect(): Promise<void> {
+    if (!this.redisClient.isOpen) {
+      await this.redisClient.connect();
       console.log('✅ Conectado a Redis');
     }
-  } catch (err) {
-    console.error('❌ Error de conexión a Redis:', err);
   }
-};
 
-export const getRedisData = async (proyectoId: number, usuarioId: string) => {
-  const key = `proyecto:${proyectoId}:${usuarioId}:datos`;
-  try {
-    const data = await redisClient.lRange(key, -100, -1); // Últimos 100 valores
-    console.log('últimos 100 datos conseguidos');
-    return data;
-  } catch (err) {
-    console.error('❌ Error obteniendo datos de Redis:', err);
-    throw err;
+  async getData(proyectoId: string, usuarioId: string): Promise<string[]> {
+    const key = `proyecto:${proyectoId}:${usuarioId}:datos`;
+    try {
+      await this.connect();
+      const data = await this.redisClient.lRange(key, -100, -1);
+      console.log('✅ Últimos 100 datos obtenidos de Redis:', data);
+      return data;
+    } catch (err) {
+      console.error('❌ Error obteniendo datos de Redis:', err);
+      throw err;
+    }
   }
-};
+}
