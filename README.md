@@ -11,23 +11,11 @@
 
 2. Añadir .env a la raíz
 
-3. Instalar dependencias (en la raíz):
+3. Abrir Docker
+
+4. Montar proyecto en terminal
 
    ```bash
-   npm i
+   docker-compose up --build -d
 
-   ```
-
-4. Abrir Docker
-
-5. Montar proyecto en Docker
-
-   ```bash
-   docker-compose build
-
-   ```
-
-6. Lanzar proyecto
-   ```bash
-   docker-compose up -d
    ```

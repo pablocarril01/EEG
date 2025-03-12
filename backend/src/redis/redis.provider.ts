@@ -30,8 +30,8 @@ export class RedisProvider {
     const key = `proyecto:${proyectoId}:${usuarioId}:datos`;
     try {
       await this.connect();
-      const data = await this.redisClient.lRange(key, -100, -1);
-      console.log('✅ Últimos 100 datos obtenidos de Redis:', data);
+      const data = await this.redisClient.lRange(key, -10, -1);
+      console.log('✅ Últimos datos obtenidos de Redis:', data);
       return data;
     } catch (err) {
       console.error('❌ Error obteniendo datos de Redis:', err);
