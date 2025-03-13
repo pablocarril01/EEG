@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   LineChart,
   Line,
@@ -7,6 +7,7 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  ReferenceLine,
 } from "recharts";
 
 interface ChartData {
@@ -17,22 +18,59 @@ interface ChartComponentProps {
   data: number[][];
 }
 
-const ChartComponent: React.FC<ChartComponentProps> = ({ data }) => {
-  if (!data || data.length === 0) {
+const ChartComponent: React.FC<ChartComponentProps> = ({ data = [] }) => {
+  const [cursorIndex, setCursorIndex] = useState(0);
+  const [displayedData, setDisplayedData] = useState<ChartData[]>([]);
+  const duration = 10000; // 10 segundos en milisegundos
+
+  useEffect(() => {
+    if (Array.isArray(data) && data.length > 0) {
+      setCursorIndex(0);
+
+      // Si es la primera vez, inicializar displayedData con los datos recibidos
+      if (displayedData.length === 0) {
+        const initialData = data.map((entry, index) => {
+          const formattedEntry: ChartData = { name: `Muestra ${index + 1}` };
+          entry.forEach((value, i) => {
+            formattedEntry[`Canal ${i + 1}`] = value;
+          });
+          return formattedEntry;
+        });
+        setDisplayedData(initialData);
+      }
+
+      let currentIndex = 0;
+      const interval = setInterval(() => {
+        setCursorIndex((prevIndex) => {
+          const nextIndex = prevIndex < data.length - 1 ? prevIndex + 1 : 0;
+          currentIndex = nextIndex;
+
+          setDisplayedData((prevData) => {
+            const newData = [...prevData];
+            if (newData[currentIndex]) {
+              // Reemplazar solo el punto de datos actual con el nuevo valor
+              newData[currentIndex] = {
+                ...newData[currentIndex],
+                ...data[currentIndex].reduce((acc, value, j) => {
+                  acc[`Canal ${j + 1}`] = value;
+                  return acc;
+                }, {} as ChartData),
+              };
+            }
+            return newData;
+          });
+
+          return nextIndex;
+        });
+      }, duration / data.length);
+
+      return () => clearInterval(interval);
+    }
+  }, [data]);
+
+  if (!Array.isArray(data) || data.length === 0) {
     return <p style={{ color: "#E0E0E0" }}>No hay datos para mostrar</p>;
   }
-
-  const transformedData: ChartData[] = data.map((entry) => {
-    const formattedEntry: ChartData = {};
-
-    entry.forEach((value, i) => {
-      formattedEntry[`Canal ${i + 1}`] = value;
-    });
-
-    return formattedEntry;
-  });
-
-  console.log("📌 Datos transformados para la gráfica:", transformedData);
 
   const channelColors = [
     "#66C2FF",
@@ -72,7 +110,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ data }) => {
         >
           <h3>{channel}</h3>
           <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={transformedData}>
+            <LineChart data={displayedData}>
               <CartesianGrid stroke="#555" strokeDasharray="3 3" />
               <XAxis hide={true} />
               <YAxis stroke="#E0E0E0" />
@@ -84,6 +122,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ data }) => {
                 dot={false}
                 isAnimationActive={false}
               />
+              <ReferenceLine x={cursorIndex} stroke="#FF0000" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>

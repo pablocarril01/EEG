@@ -47,7 +47,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isFetching) {
-      const intervalId = setInterval(fetchData, 500);
+      fetchData(); // Realizar la primera consulta inmediatamente
+      const intervalId = setInterval(fetchData, 10000);
       return () => clearInterval(intervalId);
     }
   }, [isFetching, proyectoId, usuarioId]);
