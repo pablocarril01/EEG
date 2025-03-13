@@ -123,7 +123,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ data = [] }) => {
                 dot={false}
                 isAnimationActive={false}
               />
-              <ReferenceLine x={cursorIndex} stroke="#FF0000" strokeWidth={2} />
+              <ReferenceLine x={cursorIndex} stroke="#FFFFFF" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>

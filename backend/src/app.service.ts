@@ -38,11 +38,6 @@ export class AppService {
         }
       }
 
-      console.log(
-        '📌 Datos procesados sin aplicar media:',
-        JSON.stringify(processedData),
-      );
-
       return processedData; // ✅ Devolver todos los datos sin calcular la media
     } catch (error) {
       console.error('❌ Error en getHexValues:', error);
