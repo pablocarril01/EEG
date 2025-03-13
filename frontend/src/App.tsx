@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ChartComponent from "./components/ChartComponent";
 import axios from "axios";
+import { TIEMPO_ACTUALIZACION } from "./config";
 
 const App: React.FC = () => {
   const [proyectoId, setProyectoId] = useState("");
@@ -48,7 +49,7 @@ const App: React.FC = () => {
   useEffect(() => {
     if (isFetching) {
       fetchData(); // Realizar la primera consulta inmediatamente
-      const intervalId = setInterval(fetchData, 10000);
+      const intervalId = setInterval(fetchData, TIEMPO_ACTUALIZACION);
       return () => clearInterval(intervalId);
     }
   }, [isFetching, proyectoId, usuarioId]);

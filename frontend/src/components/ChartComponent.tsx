@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { TIEMPO_ACTUALIZACION } from "../config";
 import {
   LineChart,
   Line,
@@ -21,7 +22,7 @@ interface ChartComponentProps {
 const ChartComponent: React.FC<ChartComponentProps> = ({ data = [] }) => {
   const [cursorIndex, setCursorIndex] = useState(0);
   const [displayedData, setDisplayedData] = useState<ChartData[]>([]);
-  const duration = 10000; // 10 segundos en milisegundos
+  const duration = TIEMPO_ACTUALIZACION; // 10 segundos en milisegundos
 
   useEffect(() => {
     if (Array.isArray(data) && data.length > 0) {
