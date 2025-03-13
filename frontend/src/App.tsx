@@ -8,6 +8,22 @@ const App: React.FC = () => {
   const [chartData, setChartData] = useState<number[][]>([]);
   const [isFetching, setIsFetching] = useState(false);
 
+  useEffect(() => {
+    document.body.style.backgroundColor = "#121212";
+    document.body.style.color = "#E0E0E0";
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
+    document.body.style.height = "100vh";
+
+    return () => {
+      document.body.style.backgroundColor = "";
+      document.body.style.color = "";
+      document.body.style.margin = "";
+      document.body.style.padding = "";
+      document.body.style.height = "";
+    };
+  }, []);
+
   const fetchData = async () => {
     try {
       if (!proyectoId || !usuarioId) return;
@@ -39,16 +55,19 @@ const App: React.FC = () => {
   return (
     <div
       style={{
-        maxWidth: "1000px",
-        margin: "20px auto",
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        alignItems: "center",
         textAlign: "center",
         padding: "20px",
         backgroundColor: "#121212",
         color: "#E0E0E0",
         fontFamily: "'Inter', sans-serif",
+        width: "100%",
       }}
     >
-      {/* 🔹 Inputs alineados en modo oscuro */}
       <div
         style={{
           display: "flex",
@@ -93,7 +112,6 @@ const App: React.FC = () => {
         </label>
       </div>
 
-      {/* 🔹 Botones oscuros */}
       <div
         style={{
           marginTop: "20px",
@@ -138,7 +156,6 @@ const App: React.FC = () => {
         </button>
       </div>
 
-      {/* 🔹 Gráficos en modo oscuro */}
       <div style={{ marginTop: "30px", width: "100%" }}>
         <ChartComponent data={chartData} />
       </div>
