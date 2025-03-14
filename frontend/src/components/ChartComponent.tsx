@@ -17,42 +17,46 @@ interface ChartData {
 
 interface ChartComponentProps {
   data: number[][];
+  isAnimating: boolean;
 }
 
-const ChartComponent: React.FC<ChartComponentProps> = ({ data = [] }) => {
+const ChartComponent: React.FC<ChartComponentProps> = ({
+  data = [],
+  isAnimating,
+}) => {
   const [cursorIndex, setCursorIndex] = useState(0);
   const [displayedData, setDisplayedData] = useState<ChartData[]>([]);
-  const duration = TIEMPO_ACTUALIZACION; // 10 segundos en milisegundos
 
   useEffect(() => {
-    if (Array.isArray(data) && data.length > 0) {
-      setCursorIndex(0);
-
-      // Si es la primera vez, inicializar displayedData con los datos recibidos
-      if (displayedData.length === 0) {
-        const initialData = data.map((entry, index) => {
-          const formattedEntry: ChartData = { name: `Muestra ${index + 1}` };
-          entry.forEach((value, i) => {
-            formattedEntry[`Canal ${i + 1}`] = value;
+    if (data.length > 0) {
+      setDisplayedData((prevData) => {
+        if (prevData.length === 0) {
+          return data.map((entry, index) => {
+            const formattedEntry: ChartData = {};
+            entry.forEach((value, i) => {
+              formattedEntry[`Canal ${i + 1}`] = value;
+            });
+            return formattedEntry;
           });
-          return formattedEntry;
-        });
-        setDisplayedData(initialData);
-      }
+        }
+        return prevData;
+      });
+      setCursorIndex(0);
+    }
+  }, [data]);
 
-      let currentIndex = 0;
+  useEffect(() => {
+    if (isAnimating && data.length > 0) {
       const interval = setInterval(() => {
         setCursorIndex((prevIndex) => {
           const nextIndex = prevIndex < data.length - 1 ? prevIndex + 1 : 0;
-          currentIndex = nextIndex;
 
           setDisplayedData((prevData) => {
             const newData = [...prevData];
-            if (newData[currentIndex]) {
-              // Reemplazar solo el punto de datos actual con el nuevo valor
-              newData[currentIndex] = {
-                ...newData[currentIndex],
-                ...data[currentIndex].reduce((acc, value, j) => {
+            if (newData[nextIndex]) {
+              newData[nextIndex] = {
+                ...newData[nextIndex],
+                ...data[nextIndex].reduce((acc, value, j) => {
                   acc[`Canal ${j + 1}`] = value;
                   return acc;
                 }, {} as ChartData),
@@ -63,13 +67,12 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ data = [] }) => {
 
           return nextIndex;
         });
-      }, duration / data.length);
-
+      }, TIEMPO_ACTUALIZACION / data.length);
       return () => clearInterval(interval);
     }
-  }, [data]);
+  }, [isAnimating, data]);
 
-  if (!Array.isArray(data) || data.length === 0) {
+  if (displayedData.length === 0) {
     return <p style={{ color: "#E0E0E0" }}>No hay datos para mostrar</p>;
   }
 
@@ -84,7 +87,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ data = [] }) => {
     "#B0E0E6",
   ];
 
-  const channels = Array.from({ length: 8 }, (_, i) => `Canal ${i + 1}`);
+  const channels = Object.keys(displayedData[0]);
 
   return (
     <div
@@ -119,11 +122,17 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ data = [] }) => {
               <Line
                 type="monotone"
                 dataKey={channel}
-                stroke={channelColors[i]}
+                stroke={channelColors[i % channelColors.length]}
                 dot={false}
                 isAnimationActive={false}
               />
-              <ReferenceLine x={cursorIndex} stroke="#FFFFFF" strokeWidth={2} />
+              {cursorIndex < displayedData.length ? (
+                <ReferenceLine
+                  x={cursorIndex}
+                  stroke="#FFFFFF"
+                  strokeWidth={2}
+                />
+              ) : null}
             </LineChart>
           </ResponsiveContainer>
         </div>

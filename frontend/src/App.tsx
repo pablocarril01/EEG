@@ -8,6 +8,7 @@ const App: React.FC = () => {
   const [usuarioId, setUsuarioId] = useState("");
   const [chartData, setChartData] = useState<number[][]>([]);
   const [isFetching, setIsFetching] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
     document.body.style.backgroundColor = "#121212";
@@ -123,7 +124,10 @@ const App: React.FC = () => {
         }}
       >
         <button
-          onClick={() => setIsFetching(true)}
+          onClick={() => {
+            setIsFetching(true);
+            setIsAnimating(true);
+          }}
           disabled={isFetching}
           style={{
             padding: "12px 20px",
@@ -140,7 +144,10 @@ const App: React.FC = () => {
           {isFetching ? "Actualizando..." : "Cargar Datos"}
         </button>
         <button
-          onClick={() => setIsFetching(false)}
+          onClick={() => {
+            setIsFetching(false);
+            setIsAnimating(false);
+          }}
           disabled={!isFetching}
           style={{
             padding: "12px 20px",
@@ -159,7 +166,7 @@ const App: React.FC = () => {
       </div>
 
       <div style={{ marginTop: "30px", width: "100%" }}>
-        <ChartComponent data={chartData} />
+        <ChartComponent data={chartData} isAnimating={isAnimating} />
       </div>
     </div>
   );

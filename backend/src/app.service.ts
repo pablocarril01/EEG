@@ -7,7 +7,7 @@ export class AppService {
 
   async getHexValues(
     proyectoId: string,
-    usuarioId: string,
+    usuarioId: string
   ): Promise<number[][]> {
     try {
       const rawData = await this.redisProvider.getData(proyectoId, usuarioId);
@@ -15,33 +15,31 @@ export class AppService {
 
       console.log('📌 Datos crudos de Redis:', rawData);
 
-      // 🔹 Convertir los datos en un solo string y limpiar caracteres iniciales/finales
-      const combinedString = rawData.join(';').replace(/\s/g, '');
-      const cleanedString = combinedString.replace(/^i|f$/g, '');
-
-      // 🔹 Separar los datos en BLOQUES usando "i", "f", "if", "fi" como separadores
-      const groups = cleanedString
-        .split(/if|fi|i|f/)
-        .filter((group) => group.trim() !== '');
-
       let processedData: number[][] = [];
 
-      // 🔹 Convertir valores hexadecimales a decimales y agrupar en listas de 8 valores
-      for (const group of groups) {
-        const allValues = group.split(/;|,/).filter((val) => val !== '');
-        const decimalValues = allValues.map((hexValue) =>
-          parseInt(hexValue, 16),
-        );
+      rawData.forEach((entry) => {
+        entry = entry.replace(/\s/g, '').replace(/^i|f$/g, ''); // Limpiar caracteres
+        const sequences = entry.split(/fi|if/); // Dividir en bloques
+        
+        sequences.forEach((seq) => {
+          const groups = seq.split(';');
+          groups.forEach((group) => {
+            const hexValues = group.split(',').filter(v => v.length > 0);
+            if (hexValues.length === 8) {
+              const decimalValues = hexValues.map((hex) => parseInt(hex, 16));
+              processedData.push(decimalValues);
+            }
+          });
+        });
+      });
+      //Reducción de valores y filtrado:
+      processedData = processedData.filter((_, index) => index % 2 === 0);
 
-        if (decimalValues.length >= 8) {
-          processedData.push(decimalValues.slice(0, 8)); // Tomar solo las primeras 8 columnas
-        }
-      }
 
-      return processedData; // ✅ Devolver todos los datos sin calcular la media
+      return processedData;
     } catch (error) {
-      console.error('❌ Error en getHexValues:', error);
-      throw new Error('No se pudieron obtener los datos de Redis');
+      console.error('❌ Error al obtener valores hexadecimales:', error);
+      return [];
     }
   }
 }
