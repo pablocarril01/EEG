@@ -92,7 +92,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   return (
     <div
       style={{
-        width: "100%",
+        width: "calc(100vw - 70px)",
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
