@@ -1,1 +1,1 @@
-export const TIEMPO_ACTUALIZACION = 2000; // Tiempo en milisegundos
+export const TIEMPO_ACTUALIZACION = 10000; // Tiempo en milisegundos

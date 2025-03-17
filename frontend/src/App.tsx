@@ -4,8 +4,8 @@ import axios from "axios";
 import { TIEMPO_ACTUALIZACION } from "./config";
 
 const App: React.FC = () => {
-  const [proyectoId, setProyectoId] = useState("");
-  const [usuarioId, setUsuarioId] = useState("");
+  const [proyectoId, setProyectoId] = useState("PEPI");
+  const [usuarioId, setUsuarioId] = useState("Ernesto");
   const [chartData, setChartData] = useState<number[][]>([]);
   const [isFetching, setIsFetching] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
@@ -49,7 +49,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isFetching) {
-      fetchData(); // Realizar la primera consulta inmediatamente
+      fetchData();
       const intervalId = setInterval(fetchData, TIEMPO_ACTUALIZACION);
       return () => clearInterval(intervalId);
     }
@@ -81,8 +81,7 @@ const App: React.FC = () => {
       >
         <label style={{ fontSize: "18px" }}>
           Proyecto ID:
-          <input
-            type="text"
+          <select
             value={proyectoId}
             onChange={(e) => setProyectoId(e.target.value)}
             style={{
@@ -94,12 +93,13 @@ const App: React.FC = () => {
               borderRadius: "4px",
               marginLeft: "5px",
             }}
-          />
+          >
+            <option value="PEPI">PEPI</option>
+          </select>
         </label>
         <label style={{ fontSize: "18px" }}>
           Usuario ID:
-          <input
-            type="text"
+          <select
             value={usuarioId}
             onChange={(e) => setUsuarioId(e.target.value)}
             style={{
@@ -111,7 +111,11 @@ const App: React.FC = () => {
               borderRadius: "4px",
               marginLeft: "5px",
             }}
-          />
+          >
+            <option value="Ernesto">Ernesto</option>
+            <option value="1">1</option>
+            <option value="2">2</option>
+          </select>
         </label>
       </div>
 

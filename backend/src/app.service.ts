@@ -32,9 +32,9 @@ export class AppService {
           });
         });
       });
-      //Reducción de valores y filtrado:
-      processedData = processedData.filter((_, index) => index % 2 === 0);
 
+      //Reducción de valores
+      //processedData = processedData.filter((_, index) => index % 3 === 0);
 
       return processedData;
     } catch (error) {
