@@ -47,27 +47,54 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
 
   useEffect(() => {
     if (isAnimating && data.length > 0) {
-      const interval = setInterval(() => {
-        setCursorIndex((prevIndex) => {
-          const nextIndex = prevIndex < data.length - 1 ? prevIndex + 1 : 0;
-
-          setDisplayedData((prevData) => {
-            const newData = [...prevData];
-            if (newData[nextIndex]) {
-              newData[nextIndex] = {
-                ...newData[nextIndex],
-                ...data[nextIndex].reduce((acc, value, j) => {
-                  acc[`Canal ${j + 1}`] = value;
-                  return acc;
-                }, {} as ChartData),
-              };
-            }
-            return newData;
+      setDisplayedData((prevData) => {
+        const newData = data.map((entry) => {
+          const formattedEntry: ChartData = {};
+          entry.forEach((value, i) => {
+            formattedEntry[`Canal ${i + 1}`] = value;
           });
-
-          return nextIndex;
+          return formattedEntry;
         });
-      }, TIEMPO_ACTUALIZACION / data.length);
+
+        return prevData.length > 0 ? [...prevData] : newData;
+      });
+
+      const startTime = Date.now();
+      const totalTime = TIEMPO_ACTUALIZACION;
+      const totalPoints = data.length - 1; // Ajustamos para evitar índice fuera de rango
+
+      const interval = setInterval(() => {
+        const elapsedTime = Date.now() - startTime;
+        const progress = Math.min(elapsedTime / totalTime, 1);
+        const currentIndex = Math.min(
+          Math.floor(progress * totalPoints),
+          totalPoints
+        ); // Evita que sea mayor a totalPoints
+
+        setCursorIndex(currentIndex);
+
+        setDisplayedData((prevData) => {
+          const newData = [...prevData];
+
+          for (let i = 0; i <= currentIndex; i++) {
+            if (!data[i]) continue; // Previene el error de undefined
+
+            newData[i] = {
+              ...newData[i],
+              ...data[i].reduce((acc, value, j) => {
+                acc[`Canal ${j + 1}`] = value;
+                return acc;
+              }, {} as ChartData),
+            };
+          }
+          return newData;
+        });
+
+        if (progress >= 1) {
+          clearInterval(interval);
+        }
+      }, 16);
+
       return () => clearInterval(interval);
     }
   }, [isAnimating, data]);
