@@ -18,14 +18,22 @@ interface ChartData {
 interface ChartComponentProps {
   data: number[][];
   isAnimating: boolean;
+  usuarioId: string; // Nueva prop para el ID del usuario
 }
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
   data = [],
   isAnimating,
+  usuarioId, // Recibimos usuarioId como prop
 }) => {
   const [cursorIndex, setCursorIndex] = useState(0);
   const [displayedData, setDisplayedData] = useState<ChartData[]>([]);
+
+  // Reiniciar el gráfico cuando cambie usuarioId
+  useEffect(() => {
+    setCursorIndex(0);
+    setDisplayedData([]);
+  }, [usuarioId]);
 
   useEffect(() => {
     if (data.length > 0) {

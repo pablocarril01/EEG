@@ -7,6 +7,7 @@ const App: React.FC = () => {
   const [proyectoId, setProyectoId] = useState("PEPI");
   const [usuarioId, setUsuarioId] = useState("Ernesto");
   const [chartData, setChartData] = useState<number[][]>([]);
+  const [comentarios, setComentarios] = useState<string[]>([]);
   const [isFetching, setIsFetching] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -33,15 +34,18 @@ const App: React.FC = () => {
       const response = await axios.get(
         `http://localhost:3000/api/hexValues/${proyectoId}/${usuarioId}`
       );
-      const rawData: number[][] = response.data.datos;
 
-      console.log("📌 Datos recibidos:", rawData);
+      const { datos, comentarios } = response.data;
 
-      if (!Array.isArray(rawData) || rawData.length === 0) {
+      console.log("📌 Datos recibidos:", datos);
+      console.log("📌 Comentarios recibidos:", comentarios);
+
+      if (!Array.isArray(datos) || datos.length === 0) {
         throw new Error("Los datos recibidos no son válidos");
       }
 
-      setChartData(rawData);
+      setChartData(datos);
+      setComentarios(comentarios);
     } catch (error) {
       console.error("❌ Error al obtener los datos:", error);
     }
@@ -171,6 +175,31 @@ const App: React.FC = () => {
 
       <div style={{ marginTop: "30px", width: "100%" }}>
         <ChartComponent data={chartData} isAnimating={isAnimating} />
+      </div>
+
+      {/* Sección de comentarios */}
+      <div style={{ marginTop: "20px", width: "80%", textAlign: "left" }}>
+        <h2>Comentarios</h2>
+        {comentarios.length > 0 ? (
+          <ul style={{ listStyleType: "none", padding: 0 }}>
+            {comentarios.map((comentario, index) => (
+              <li
+                key={index}
+                style={{
+                  backgroundColor: "#222",
+                  color: "#E0E0E0",
+                  padding: "10px",
+                  marginBottom: "5px",
+                  borderRadius: "5px",
+                }}
+              >
+                {comentario}
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p>No hay comentarios disponibles.</p>
+        )}
       </div>
     </div>
   );

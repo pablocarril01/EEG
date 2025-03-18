@@ -35,7 +35,20 @@ export class RedisProvider {
       return data;
     } catch (err) {
       console.error('❌ Error obteniendo datos de Redis:', err);
-      throw err;
+      return [];
+    }
+  }
+
+  async getComentarios(proyectoId: string, usuarioId: string): Promise<string[]> {
+    const key = `proyecto:${proyectoId}:${usuarioId}:comentarios`;
+    try {
+      await this.connect();
+      const comentarios = await this.redisClient.lRange(key, -10, -1);
+      console.log('✅ Últimos comentarios obtenidos de Redis:', comentarios);
+      return comentarios;
+    } catch (err) {
+      console.error('❌ Error obteniendo comentarios de Redis:', err);
+      return [];
     }
   }
 }

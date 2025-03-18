@@ -5,28 +5,62 @@ import { RedisProvider } from './redis/redis.provider';
 export class AppService {
   constructor(private readonly redisProvider: RedisProvider) {}
 
-  async getHexValues(
-    proyectoId: string,
-    usuarioId: string
-  ): Promise<number[][]> {
+  async getProyectoInfo(proyectoId: string, usuarioId: string): Promise<{ datos: number[][]; comentarios: string[] }> {
     try {
       const rawData = await this.redisProvider.getData(proyectoId, usuarioId);
-      if (!rawData || rawData.length === 0) return [];
+      let comentarios = await this.redisProvider.getComentarios(proyectoId, usuarioId);
+
+      // Procesar cada elemento de la variable "comentarios"
+      comentarios = comentarios.map(item => {
+        const itemSinAmpersand = item.replace(/&/g, "");
+        const partes = itemSinAmpersand.split("$");
+    
+        if (partes.length === 2) {
+            const fechaUnix = parseInt(partes[0], 10);
+            const mensaje = partes[1];
+    
+            if (!isNaN(fechaUnix)) {
+                // Convertir a fecha local en España
+                const fecha = new Date(fechaUnix * 1000);
+                const fechaLegible = fecha.toLocaleString("es-ES", {
+                    timeZone: "Europe/Madrid", // Ajuste a la zona horaria de España
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    hour12: false
+                }).replace(",", "");
+    
+                return `${fechaLegible}: ${mensaje}`;
+            } else {
+                return `Error con la fecha en: ${item}`;
+            }
+        } else {
+            return `Formato incorrecto en: ${item}`;
+        }
+    });
+    
+
+
+
+      if (!rawData || rawData.length === 0) return { datos: [], comentarios };
 
       console.log('📌 Datos crudos de Redis:', rawData);
+      console.log('📌 Comentarios crudos de Redis:', comentarios);
 
       let processedData: number[][] = [];
 
       rawData.forEach((entry) => {
-        entry = entry.replace(/\s/g, '').replace(/^i|f$/g, ''); // Limpiar caracteres
-        const sequences = entry.split(/fi|if/); // Dividir en bloques
-        
+        entry = entry.replace(/\s/g, '').replace(/^i|f$/g, '');
+        const sequences = entry.split(/fi|if/);
+
         sequences.forEach((seq) => {
           const groups = seq.split(';');
           groups.forEach((group) => {
             const hexValues = group.split(',').filter(v => v.length > 0);
             if (hexValues.length === 8) {
-              const decimalValues = hexValues.map((hex) => parseInt(hex, 16));
+              const decimalValues = hexValues.map(val => parseInt(val, 16));
               processedData.push(decimalValues);
             }
           });
@@ -34,12 +68,12 @@ export class AppService {
       });
 
       //Reducción de valores
-      processedData = processedData.filter((_, index) => index % 10 === 0);
+      processedData = processedData.filter((_, index) => index % 5 === 0);
 
-      return processedData;
+      return { datos: processedData, comentarios };
     } catch (error) {
-      console.error('❌ Error al obtener valores hexadecimales:', error);
-      return [];
+      console.error('❌ Error procesando los datos:', error);
+      return { datos: [], comentarios: [] };
     }
   }
 }
