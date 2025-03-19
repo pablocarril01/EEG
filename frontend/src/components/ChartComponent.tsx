@@ -5,7 +5,6 @@ import {
   Line,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
@@ -131,7 +130,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        gap: "20px",
+        gap: "0px",
       }}
     >
       {channels.map((channel, i) => (
@@ -139,18 +138,26 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           key={i}
           style={{
             width: "100%",
-            border: "1px solid #444",
             padding: "10px",
-            borderRadius: "5px",
             backgroundColor: "#222",
-            textAlign: "center",
+            display: "flex",
+            alignItems: "center",
             color: "#E0E0E0",
+            height: "10vh",
           }}
         >
-          <h3>{channel}</h3>
-          <ResponsiveContainer width="100%" height={250}>
+          <h3
+            style={{
+              marginRight: "20px",
+              writingMode: "vertical-rl",
+              transform: "rotate(180deg)",
+            }}
+          >
+            {channel}
+          </h3>
+
+          <ResponsiveContainer width="100%" height="100%">
             <LineChart data={displayedData}>
-              <CartesianGrid stroke="#555" strokeDasharray="3 3" />
               <XAxis hide={true} />
               <YAxis stroke="#E0E0E0" />
               <Tooltip />
@@ -161,13 +168,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
                 dot={false}
                 isAnimationActive={false}
               />
-              {cursorIndex < displayedData.length ? (
-                <ReferenceLine
-                  x={cursorIndex}
-                  stroke="#FFFFFF"
-                  strokeWidth={2}
-                />
-              ) : null}
+              <ReferenceLine x={cursorIndex} stroke="#FFFFFF" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
         </div>

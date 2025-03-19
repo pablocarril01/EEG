@@ -5,7 +5,7 @@ import { TIEMPO_ACTUALIZACION } from "./config";
 
 const App: React.FC = () => {
   const [proyectoId, setProyectoId] = useState("PEPI");
-  const [usuarioId, setUsuarioId] = useState("Ernesto");
+  const [usuarioId, setUsuarioId] = useState("Pablo");
   const [chartData, setChartData] = useState<number[][]>([]);
   const [comentarios, setComentarios] = useState<string[]>([]);
   const [isFetching, setIsFetching] = useState(false);
@@ -116,8 +116,8 @@ const App: React.FC = () => {
               marginLeft: "5px",
             }}
           >
-            <option value="Ernesto">Ernesto</option>
             <option value="Pablo">Pablo</option>
+            <option value="Ernesto">Ernesto</option>
             <option value="1">1</option>
             <option value="2">2</option>
           </select>
