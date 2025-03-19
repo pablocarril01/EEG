@@ -43,7 +43,7 @@ export class RedisProvider {
     const key = `proyecto:${proyectoId}:${usuarioId}:comentarios`;
     try {
       await this.connect();
-      const comentarios = await this.redisClient.lRange(key, -10, -1);
+      const comentarios = await this.redisClient.lRange(key, -5, -1);
       console.log('✅ Últimos comentarios obtenidos de Redis:', comentarios);
       return comentarios;
     } catch (err) {

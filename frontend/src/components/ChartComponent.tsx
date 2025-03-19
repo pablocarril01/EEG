@@ -39,7 +39,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     if (data.length > 0) {
       setDisplayedData((prevData) => {
         if (prevData.length === 0) {
-          return data.map((entry, index) => {
+          return data.map((entry) => {
             const formattedEntry: ChartData = {};
             entry.forEach((value, i) => {
               formattedEntry[`Canal ${i + 1}`] = value;

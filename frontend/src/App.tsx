@@ -117,6 +117,7 @@ const App: React.FC = () => {
             }}
           >
             <option value="Ernesto">Ernesto</option>
+            <option value="Pablo">Pablo</option>
             <option value="1">1</option>
             <option value="2">2</option>
           </select>
@@ -174,7 +175,11 @@ const App: React.FC = () => {
       </div>
 
       <div style={{ marginTop: "30px", width: "100%" }}>
-        <ChartComponent data={chartData} isAnimating={isAnimating} />
+        <ChartComponent
+          data={chartData}
+          isAnimating={isAnimating}
+          usuarioId={usuarioId}
+        />
       </div>
 
       {/* Sección de comentarios */}
