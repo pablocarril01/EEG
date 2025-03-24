@@ -20,6 +20,8 @@ interface ChartComponentProps {
   usuarioId: string; // Nueva prop para el ID del usuario
 }
 
+const canales = ["FP1", "FP2", "T1", "T2", "T3", "T4", "C3", "C4"];
+
 const ChartComponent: React.FC<ChartComponentProps> = ({
   data = [],
   isAnimating,
@@ -41,7 +43,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           return data.map((entry) => {
             const formattedEntry: ChartData = {};
             entry.forEach((value, i) => {
-              formattedEntry[`Canal ${i + 1}`] = value;
+              formattedEntry[`${canales[i]}`] = value;
             });
             return formattedEntry;
           });
@@ -58,7 +60,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         const newData = data.map((entry) => {
           const formattedEntry: ChartData = {};
           entry.forEach((value, i) => {
-            formattedEntry[`Canal ${i + 1}`] = value;
+            formattedEntry[`${canales[i]}`] = value;
           });
           return formattedEntry;
         });
@@ -89,7 +91,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             newData[i] = {
               ...newData[i],
               ...data[i].reduce((acc, value, j) => {
-                acc[`Canal ${j + 1}`] = value;
+                acc[canales[j] || `Canal ${j + 1}`] = value;
                 return acc;
               }, {} as ChartData),
             };
@@ -150,7 +152,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             style={{
               marginRight: "20px",
               writingMode: "vertical-rl",
-              transform: "rotate(180deg)",
+              transform: "rotate(-90deg)",
             }}
           >
             {channel}

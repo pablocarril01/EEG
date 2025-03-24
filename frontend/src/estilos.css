@@ -1,0 +1,117 @@
+body {
+  background-color: #121212;
+  color: #e0e0e0;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  font-family: "Inter", sans-serif;
+}
+
+.app-container {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+  width: 100%;
+}
+
+.selector-container {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.selector-label {
+  font-size: 18px;
+}
+
+.selector-dropdown {
+  width: 150px;
+  padding: 8px;
+  background-color: #222;
+  color: #e0e0e0;
+  border: 1px solid #555;
+  border-radius: 4px;
+  margin-left: 5px;
+}
+
+.buttons-container {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+}
+
+.btn {
+  padding: 12px 20px;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  transition: 0.3s;
+}
+
+.btn-start {
+  background-color: #007bff;
+  cursor: pointer;
+}
+
+.btn-start:disabled {
+  background-color: #4caf50;
+  cursor: default;
+  opacity: 0.7;
+}
+
+.btn-stop {
+  background-color: #e63946;
+  cursor: pointer;
+}
+
+.btn-stop:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.chart-container {
+  margin-top: 30px;
+  width: 100%;
+}
+
+.chart-box {
+  width: 100%;
+  padding: 10px;
+  background-color: #222;
+  display: flex;
+  align-items: center;
+  color: #e0e0e0;
+  height: 10vh;
+}
+
+.chart-title {
+  margin-right: 20px;
+  writing-mode: vertical-rl;
+  transform: rotate(-90deg);
+}
+
+.comment-section {
+  margin-top: 20px;
+  width: 80%;
+  text-align: left;
+}
+
+.comment-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.comment-item {
+  background-color: #222;
+  color: #e0e0e0;
+  padding: 10px;
+  margin-bottom: 5px;
+  border-radius: 5px;
+}
