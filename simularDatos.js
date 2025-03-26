@@ -29,7 +29,7 @@ client.on("error", (err) => {
     let pendiente = 1; // Factor de pendiente
 
     function actualizarPendiente() {
-      pendiente = Math.random() * (1.2 - 0.15) + 0.15; // Generar un valor entre 15% y 120%
+      pendiente = Math.random() * (1.2 - 0.15) + 0.5; // Generar un valor entre 15% y 120%
       cicloRampa = Math.round(200 / pendiente); // Ajustar la duración del ciclo con la nueva pendiente
       console.log(`🔄 Nueva pendiente: ${Math.round(pendiente * 100)}%`);
     }
@@ -45,7 +45,7 @@ client.on("error", (err) => {
         for (let j = 0; j < 8; j++) {
           // Generar rampa periódica con pendiente variable
           let valorBase =
-            10000 + ((contadorRampa % cicloRampa) / cicloRampa) * 10000;
+            10000 + ((contadorRampa % cicloRampa) / cicloRampa) * 200000;
 
           // Agregar ruido del 2%
           let ruido = (Math.random() * 0.04 - 0.02) * valorBase;

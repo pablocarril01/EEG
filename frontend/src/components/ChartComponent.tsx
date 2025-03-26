@@ -10,6 +10,8 @@ import {
   ReferenceLine,
 } from "recharts";
 
+import "../estilos.css";
+
 interface ChartData {
   [key: string]: number | string;
 }
@@ -17,20 +19,19 @@ interface ChartData {
 interface ChartComponentProps {
   data: number[][];
   isAnimating: boolean;
-  usuarioId: string; // Nueva prop para el ID del usuario
+  usuarioId: string;
 }
 
-const canales = ["FP1", "FP2", "T1", "T2", "T3", "T4", "C3", "C4"];
+const channelNames = ["FP1", "FP2", "T1", "T2", "T3", "T4", "C3", "C4"];
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
   data = [],
   isAnimating,
-  usuarioId, // Recibimos usuarioId como prop
+  usuarioId,
 }) => {
   const [cursorIndex, setCursorIndex] = useState(0);
   const [displayedData, setDisplayedData] = useState<ChartData[]>([]);
 
-  // Reiniciar el gráfico cuando cambie usuarioId
   useEffect(() => {
     setCursorIndex(0);
     setDisplayedData([]);
@@ -43,7 +44,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           return data.map((entry) => {
             const formattedEntry: ChartData = {};
             entry.forEach((value, i) => {
-              formattedEntry[`${canales[i]}`] = value;
+              formattedEntry[channelNames[i] || `Canal ${i + 1}`] = value;
             });
             return formattedEntry;
           });
@@ -60,7 +61,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         const newData = data.map((entry) => {
           const formattedEntry: ChartData = {};
           entry.forEach((value, i) => {
-            formattedEntry[`${canales[i]}`] = value;
+            formattedEntry[channelNames[i] || `Canal ${i + 1}`] = value;
           });
           return formattedEntry;
         });
@@ -70,7 +71,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
 
       const startTime = Date.now();
       const totalTime = TIEMPO_ACTUALIZACION;
-      const totalPoints = data.length - 1; // Ajustamos para evitar índice fuera de rango
+      const totalPoints = data.length - 1;
 
       const interval = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
@@ -78,7 +79,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         const currentIndex = Math.min(
           Math.floor(progress * totalPoints),
           totalPoints
-        ); // Evita que sea mayor a totalPoints
+        );
 
         setCursorIndex(currentIndex);
 
@@ -86,12 +87,12 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           const newData = [...prevData];
 
           for (let i = 0; i <= currentIndex; i++) {
-            if (!data[i]) continue; // Previene el error de undefined
+            if (!data[i]) continue;
 
             newData[i] = {
               ...newData[i],
               ...data[i].reduce((acc, value, j) => {
-                acc[canales[j] || `Canal ${j + 1}`] = value;
+                acc[channelNames[j] || `Canal ${j + 1}`] = value;
                 return acc;
               }, {} as ChartData),
             };
@@ -126,42 +127,19 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   const channels = Object.keys(displayedData[0]);
 
   return (
-    <div
-      style={{
-        width: "calc(100vw - 70px)",
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        gap: "0px",
-      }}
-    >
+    <div className="chart-container">
       {channels.map((channel, i) => (
-        <div
-          key={i}
-          style={{
-            width: "100%",
-            padding: "10px",
-            backgroundColor: "#222",
-            display: "flex",
-            alignItems: "center",
-            color: "#E0E0E0",
-            height: "10vh",
-          }}
-        >
-          <h3
-            style={{
-              marginRight: "20px",
-              writingMode: "vertical-rl",
-              transform: "rotate(-90deg)",
-            }}
-          >
-            {channel}
-          </h3>
+        <div key={i} className="chart-box">
+          <h3 className="chart-title">{channel}</h3>
 
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={displayedData}>
               <XAxis hide={true} />
-              <YAxis stroke="#E0E0E0" />
+              <YAxis
+                stroke="#E0E0E0"
+                domain={[-2000, 2000]}
+                allowDataOverflow={true}
+              />
               <Tooltip />
               <Line
                 type="monotone"

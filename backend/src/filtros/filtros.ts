@@ -1,151 +1,47 @@
-export class Filtros {
-  // 🔹 Filtro Pasa Bajos Butterworth
-  static calculateButterworthCoefficients(
-    cutoffFrequency: number,
-    samplingFrequency: number,
-  ): number[] {
-    const w0 = (2 * Math.PI * cutoffFrequency) / samplingFrequency;
-    const Q = 1 / Math.sqrt(2);
-    const alpha = Math.sin(w0) / (2 * Q);
+export function convertirADCaMicrovoltios(valorADC: number): number {
+  const factor = (2.5 * 1e6) / (32768 * 3600);
+  return valorADC * factor;
+}
 
-    return [
-      (1 - Math.cos(w0)) / 2,
-      1 - Math.cos(w0),
-      (1 - Math.cos(w0)) / 2,
-      -2 * Math.cos(w0),
-      1 - alpha,
-    ];
-  }
+export function calcularMedias(listaDeListas: number[][]): number[] {
+  const numElementos = listaDeListas.length;
+  if (numElementos === 0) return Array(8).fill(0); // Si la lista está vacía, devuelve un vector de ceros.
 
-  static lowPassButterworthFilter(
-    input: number[],
-    coefficients: number[],
-  ): number[] {
-    const output: number[] = [];
-    let x = [0, 0, 0];
-    let y = [0, 0, 0];
+  const sumas = Array(8).fill(0); // Inicializa un array de sumas con 8 valores en 0.
 
-    input.forEach((value) => {
-      x = [value, x[0], x[1]];
-      y = [
-        coefficients[0] * x[0] +
-          coefficients[1] * x[1] +
-          coefficients[2] * x[2] -
-          coefficients[3] * y[1] -
-          coefficients[4] * y[2],
-        y[0],
-        y[1],
-      ];
-      output.push(y[0]);
+  listaDeListas.forEach(lista => {
+    lista.forEach((valor, indice) => {
+      sumas[indice] += valor; // Suma los valores en sus respectivas posiciones.
     });
+  });
 
-    return output;
-  }
+  return sumas.map(suma => suma / numElementos); // Calcula las medias dividiendo entre la cantidad de listas.
+}
 
-  // 🔹 Filtro Pasa Altos Butterworth
-  static calculateHighPassButterworthCoefficients(
-    cutoffFrequency: number,
-    samplingFrequency: number,
-  ): number[] {
-    const w0 = (2 * Math.PI * cutoffFrequency) / samplingFrequency;
-    const Q = 1 / Math.sqrt(2);
-    const alpha = Math.sin(w0) / (2 * Q);
+export function restarMedias(listaDeListas: number[][], medias: number[]): number[][] {
+  return listaDeListas.map(lista => 
+    lista.map((valor, indice) => valor - medias[indice])
+  );
+}
 
-    return [
-      (1 + Math.cos(w0)) / 2,
-      -(1 + Math.cos(w0)),
-      (1 + Math.cos(w0)) / 2,
-      -2 * Math.cos(w0),
-      1 - alpha,
-    ];
-  }
+export function calcularMedianas(listaDeListas: number[][]): number[] {
+  const numElementos = listaDeListas.length;
+  if (numElementos === 0) return Array(8).fill(0); // Si está vacío, devuelve un vector de ceros.
 
-  static highPassButterworthFilter(
-    input: number[],
-    coefficients: number[],
-  ): number[] {
-    return Filtros.lowPassButterworthFilter(input, coefficients);
-  }
+  const columnas = Array.from({ length: 8 }, (_, i) => 
+    listaDeListas.map(lista => lista[i]).sort((a, b) => a - b)
+  );
 
-  // 🔹 Filtro Notch para eliminar interferencias (Ej: 50Hz)
-  static calculateNotchCoefficients(
-    centerFrequency: number,
-    samplingFrequency: number,
-    Q: number,
-  ): number[] {
-    const w0 = (2 * Math.PI * centerFrequency) / samplingFrequency;
-    const alpha = Math.sin(w0) / (2 * Q);
+  return columnas.map(columna => {
+    const mitad = Math.floor(columna.length / 2);
+    return columna.length % 2 === 0
+      ? (columna[mitad - 1] + columna[mitad]) / 2 // Promedio de los dos valores centrales
+      : columna[mitad]; // Valor central si la longitud es impar
+  });
+}
 
-    return [1, -2 * Math.cos(w0), 1, -2 * Math.cos(w0), 1 - alpha];
-  }
-
-  static notchFilter(input: number[], coefficients: number[]): number[] {
-    return Filtros.lowPassButterworthFilter(input, coefficients);
-  }
-
-  // 🔹 Quitar Offset usando la Mediana
-  static quitarOffsetMediana(column: number[]): number[] {
-    const sortedColumn = [...column].sort((a, b) => a - b);
-    const median =
-      column.length % 2 === 0
-        ? (sortedColumn[column.length / 2] +
-            sortedColumn[column.length / 2 - 1]) /
-          2
-        : sortedColumn[Math.floor(column.length / 2)];
-
-    return column.map((value) => value - median);
-  }
-
-  // 🔹 Redondear valores cercanos a 0
-  static redondearA0(column: number[], threshold: number): number[] {
-    return column.map((value) => (Math.abs(value) < threshold ? 0 : value));
-  }
-
-  // 🔹 Media de los datos (promedio)
-  static promedio(column: number[]): number[] {
-    if (column.length === 0) return [];
-    const mean = column.reduce((sum, val) => sum + val, 0) / column.length;
-    return column.map((value) => value - mean);
-  }
-
-  // 🔹 Aplicar todos los filtros en un solo paso
-  static aplicarFiltros(
-    column: number[],
-    samplingFrequency: number,
-    cutoffLow: number,
-    cutoffHigh: number,
-    notchFrequency: number,
-    threshold: number,
-  ): number[] {
-    const lowPassCoeffs = Filtros.calculateButterworthCoefficients(
-      cutoffLow,
-      samplingFrequency,
-    );
-    const highPassCoeffs = Filtros.calculateHighPassButterworthCoefficients(
-      cutoffHigh,
-      samplingFrequency,
-    );
-    const notchCoeffs = Filtros.calculateNotchCoefficients(
-      notchFrequency,
-      samplingFrequency,
-      30,
-    );
-
-    let filteredColumn = column;
-
-    filteredColumn = Filtros.lowPassButterworthFilter(
-      filteredColumn,
-      lowPassCoeffs,
-    );
-    filteredColumn = Filtros.highPassButterworthFilter(
-      filteredColumn,
-      highPassCoeffs,
-    );
-    filteredColumn = Filtros.notchFilter(filteredColumn, notchCoeffs);
-
-    filteredColumn = Filtros.quitarOffsetMediana(filteredColumn);
-    filteredColumn = Filtros.redondearA0(filteredColumn, threshold);
-
-    return filteredColumn;
-  }
+export function restarMedianas(listaDeListas: number[][], medianas: number[]): number[][] {
+  return listaDeListas.map(lista => 
+    lista.map((valor, indice) => valor - medianas[indice])
+  );
 }

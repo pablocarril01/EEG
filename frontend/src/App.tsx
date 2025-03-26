@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from "react";
 import ChartComponent from "./components/ChartComponent";
 import axios from "axios";
+
 import { TIEMPO_ACTUALIZACION } from "./config";
+
+import "./estilos.css";
 
 const App: React.FC = () => {
   const [proyectoId, setProyectoId] = useState("PEPI");
@@ -12,18 +15,9 @@ const App: React.FC = () => {
   const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    document.body.style.backgroundColor = "#121212";
-    document.body.style.color = "#E0E0E0";
-    document.body.style.margin = "0";
-    document.body.style.padding = "0";
-    document.body.style.height = "100vh";
-
+    document.body.classList.add("body");
     return () => {
-      document.body.style.backgroundColor = "";
-      document.body.style.color = "";
-      document.body.style.margin = "";
-      document.body.style.padding = "";
-      document.body.style.height = "";
+      document.body.classList.remove("body");
     };
   }, []);
 
@@ -60,61 +54,24 @@ const App: React.FC = () => {
   }, [isFetching, proyectoId, usuarioId]);
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        textAlign: "center",
-        padding: "20px",
-        backgroundColor: "#121212",
-        color: "#E0E0E0",
-        fontFamily: "'Inter', sans-serif",
-        width: "100%",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "center",
-          gap: "20px",
-          flexWrap: "wrap",
-        }}
-      >
-        <label style={{ fontSize: "18px" }}>
+    <div className="app-container">
+      <div className="selector-container">
+        <label className="selector-label">
           Proyecto ID:
           <select
             value={proyectoId}
             onChange={(e) => setProyectoId(e.target.value)}
-            style={{
-              width: "150px",
-              padding: "8px",
-              backgroundColor: "#222",
-              color: "#E0E0E0",
-              border: "1px solid #555",
-              borderRadius: "4px",
-              marginLeft: "5px",
-            }}
+            className="selector-dropdown"
           >
             <option value="PEPI">PEPI</option>
           </select>
         </label>
-        <label style={{ fontSize: "18px" }}>
+        <label className="selector-label">
           Usuario ID:
           <select
             value={usuarioId}
             onChange={(e) => setUsuarioId(e.target.value)}
-            style={{
-              width: "150px",
-              padding: "8px",
-              backgroundColor: "#222",
-              color: "#E0E0E0",
-              border: "1px solid #555",
-              borderRadius: "4px",
-              marginLeft: "5px",
-            }}
+            className="selector-dropdown"
           >
             <option value="Pablo">Pablo</option>
             <option value="Ernesto">Ernesto</option>
@@ -124,31 +81,14 @@ const App: React.FC = () => {
         </label>
       </div>
 
-      <div
-        style={{
-          marginTop: "20px",
-          display: "flex",
-          justifyContent: "center",
-          gap: "15px",
-        }}
-      >
+      <div className="buttons-container">
         <button
           onClick={() => {
             setIsFetching(true);
             setIsAnimating(true);
           }}
           disabled={isFetching}
-          style={{
-            padding: "12px 20px",
-            backgroundColor: isFetching ? "#4CAF50" : "#007BFF",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: isFetching ? "default" : "pointer",
-            opacity: isFetching ? 0.7 : 1,
-            transition: "0.3s",
-            fontSize: "16px",
-          }}
+          className="btn btn-start"
         >
           {isFetching ? "Actualizando..." : "Cargar Datos"}
         </button>
@@ -158,23 +98,13 @@ const App: React.FC = () => {
             setIsAnimating(false);
           }}
           disabled={!isFetching}
-          style={{
-            padding: "12px 20px",
-            backgroundColor: "#E63946",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: !isFetching ? "default" : "pointer",
-            opacity: !isFetching ? 0.5 : 1,
-            transition: "0.3s",
-            fontSize: "16px",
-          }}
+          className="btn btn-stop"
         >
           Detener
         </button>
       </div>
 
-      <div style={{ marginTop: "30px", width: "100%" }}>
+      <div className="chart-container">
         <ChartComponent
           data={chartData}
           isAnimating={isAnimating}
@@ -182,22 +112,12 @@ const App: React.FC = () => {
         />
       </div>
 
-      {/* Sección de comentarios */}
-      <div style={{ marginTop: "20px", width: "80%", textAlign: "left" }}>
+      <div className="comment-section">
         <h2>Comentarios</h2>
         {comentarios.length > 0 ? (
-          <ul style={{ listStyleType: "none", padding: 0 }}>
+          <ul className="comment-list">
             {comentarios.map((comentario, index) => (
-              <li
-                key={index}
-                style={{
-                  backgroundColor: "#222",
-                  color: "#E0E0E0",
-                  padding: "10px",
-                  marginBottom: "5px",
-                  borderRadius: "5px",
-                }}
-              >
+              <li key={index} className="comment-item">
                 {comentario}
               </li>
             ))}
