@@ -5,7 +5,7 @@ import os
 from dotenv import load_dotenv
 
 # Cargar variables del archivo .env
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 # Configuración de Redis desde el .env
 redis_host = os.getenv("REDIS_HOST")
