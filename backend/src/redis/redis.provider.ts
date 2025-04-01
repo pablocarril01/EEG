@@ -2,8 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { createClient } from 'redis';
 
 import * as dotenv from 'dotenv';
-
-dotenv.config();
+import * as path from 'path';
+dotenv.config({ path: path.resolve(__dirname, '../../../.env') });
 
 @Injectable()
 export class RedisProvider {
