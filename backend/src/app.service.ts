@@ -82,9 +82,16 @@ export class AppService {
 
       // Inicio de Filtrado de medidas
 
+      /*
       processedData = processedData.map((grupo) =>
         grupo.map((valor) => convertirADCaMicrovoltios(valor)),
       );
+      */
+
+      function restar32768(matriz: number[][]): number[][] {
+        return matriz.map((fila) => fila.map((valor) => valor - 32768));
+      }
+      processedData = restar32768(processedData);
 
       const medias = calcularMedias(processedData);
       console.log(medias);
