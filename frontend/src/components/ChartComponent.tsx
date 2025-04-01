@@ -137,7 +137,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
               <XAxis hide={true} />
               <YAxis
                 stroke="#E0E0E0"
-                domain={[-2000, 2000]}
+                domain={[-2000, 2000]} //(2.5 * 1e6) / (32768 * 3600)
                 allowDataOverflow={true}
               />
               <Tooltip />
