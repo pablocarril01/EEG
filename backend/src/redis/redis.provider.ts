@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { createClient } from 'redis';
 
+import * as dotenv from 'dotenv';
+
+dotenv.config();
+
 @Injectable()
 export class RedisProvider {
   private redisClient;
@@ -39,7 +43,10 @@ export class RedisProvider {
     }
   }
 
-  async getComentarios(proyectoId: string, usuarioId: string): Promise<string[]> {
+  async getComentarios(
+    proyectoId: string,
+    usuarioId: string,
+  ): Promise<string[]> {
     const key = `proyecto:${proyectoId}:${usuarioId}:comentarios`;
     try {
       await this.connect();
