@@ -87,9 +87,9 @@ export class AppService {
 
       //pasoBajo
 
-      // processedData = aplicarFiltroMedianaPorBloques(processedData, 50);
+      processedData = aplicarFiltroMedianaPorBloques(processedData, 50);
 
-      // processedData = aplicarFiltroMediaPorBloques(processedData, 50);
+      processedData = aplicarFiltroMediaPorBloques(processedData, 50);
 
       //      Reducción de valores
 
