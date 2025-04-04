@@ -136,6 +136,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             <LineChart data={displayedData}>
               <XAxis hide={true} />
               <YAxis
+                width={0}
                 stroke="#E0E0E0"
                 domain={[-2000, 2000]} //(2.5 * 1e6) / (32768 * 3600)
                 allowDataOverflow={true}
