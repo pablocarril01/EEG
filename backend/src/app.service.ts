@@ -79,19 +79,17 @@ export class AppService {
 
       // Inicio de Filtrado de medidas
 
-      /*
-      processedData = processedData.map((grupo) =>
-        grupo.map((valor) => convertirADCaMicrovoltios(valor)),
-      );
-      */
-
       processedData = restar32768(processedData);
 
-      processedData = aplicarFiltroMediaPorBloques(processedData, 50);
+      //notch
 
-      processedData = aplicarFiltroMedianaPorBloques(processedData, 50);
+      //pasoAlto
 
-      //processedData = eliminarSenoideNotch(processedData, 50, 500);
+      //pasoBajo
+
+      // processedData = aplicarFiltroMedianaPorBloques(processedData, 50);
+
+      // processedData = aplicarFiltroMediaPorBloques(processedData, 50);
 
       //      Reducción de valores
 
