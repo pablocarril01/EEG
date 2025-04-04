@@ -139,15 +139,16 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
                 stroke="#E0E0E0"
                 domain={[-2000, 2000]} //(2.5 * 1e6) / (32768 * 3600)
                 allowDataOverflow={true}
+                tick={false}
               />
-              <Tooltip />
+              {/* <Tooltip />
               <Line
                 type="monotone"
                 dataKey={channel}
                 stroke={channelColors[i % channelColors.length]}
                 dot={false}
                 isAnimationActive={false}
-              />
+              /> */}
               <ReferenceLine x={cursorIndex} stroke="#FFFFFF" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
