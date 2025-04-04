@@ -141,14 +141,14 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
                 allowDataOverflow={true}
                 tick={false}
               />
-              {/* <Tooltip />
+              {/* <Tooltip /> */}
               <Line
                 type="monotone"
                 dataKey={channel}
                 stroke={channelColors[i % channelColors.length]}
                 dot={false}
                 isAnimationActive={false}
-              /> */}
+              />
               <ReferenceLine x={cursorIndex} stroke="#FFFFFF" strokeWidth={2} />
             </LineChart>
           </ResponsiveContainer>
