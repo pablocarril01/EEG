@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { RedisProvider } from './redis/redis.provider';
 import {
-  calcularMedias,
-  calcularMedianas,
-  restarMedias,
+  restar32768,
   aplicarFiltroMedianaPorBloques,
-  calcularMediana,
+  aplicarFiltroMediaPorBloques,
 } from './filtros/filtros';
 
 @Injectable()
@@ -87,18 +85,9 @@ export class AppService {
       );
       */
 
-      function restar32768(matriz: number[][]): number[][] {
-        return matriz.map((fila) => fila.map((valor) => valor - 32768));
-      }
       processedData = restar32768(processedData);
 
-      const medias = calcularMedias(processedData);
-      console.log(medias);
-
-      const medianas = calcularMedianas(processedData);
-      console.log(medianas);
-
-      processedData = restarMedias(processedData, medias);
+      processedData = aplicarFiltroMediaPorBloques(processedData, 50);
 
       processedData = aplicarFiltroMedianaPorBloques(processedData, 50);
 

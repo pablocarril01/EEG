@@ -3,6 +3,10 @@ export function convertirADCaMicrovoltios(valorADC: number): number {
   return valorADC * factor;
 }
 
+export function restar32768(matriz: number[][]): number[][] {
+  return matriz.map((fila) => fila.map((valor) => valor - 32768));
+}
+
 export function calcularMedias(listaDeListas: number[][]): number[] {
   const numElementos = listaDeListas.length;
   if (numElementos === 0) return Array(8).fill(0); // Si la lista está vacía, devuelve un vector de ceros.
@@ -83,6 +87,37 @@ export function eliminarSenoideNotch(
     console.error('❌ Error aplicando filtro:', e);
     return [];
   }
+}
+
+export function aplicarFiltroMediaPorBloques(
+  data: number[][],
+  bloqueSize: number = 50,
+): number[][] {
+  const filtrado: number[][] = [];
+
+  for (let i = 0; i < data.length; i += bloqueSize) {
+    const bloque = data.slice(i, i + bloqueSize);
+
+    // Calcular la media para cada canal
+    const medias: number[] = [];
+    for (let canal = 0; canal < 8; canal++) {
+      const valores = bloque
+        .map((row) => row[canal])
+        .filter((val) => val !== undefined);
+      const suma = valores.reduce((acc, val) => acc + val, 0);
+      const media = valores.length > 0 ? suma / valores.length : 0;
+      medias.push(media);
+    }
+
+    // Restar la media a cada valor del bloque
+    const bloqueFiltrado = bloque.map((row) =>
+      row.map((valor, canal) => valor - medias[canal]),
+    );
+
+    filtrado.push(...bloqueFiltrado);
+  }
+
+  return filtrado;
 }
 
 export function aplicarFiltroMedianaPorBloques(
