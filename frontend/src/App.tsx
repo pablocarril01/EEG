@@ -26,7 +26,7 @@ const App: React.FC = () => {
       if (!proyectoId || !usuarioId) return;
 
       const response = await axios.get(
-        `http://localhost:3000/api/hexValues/${proyectoId}/${usuarioId}` //http://localhost:3000
+        `/api/hexValues/${proyectoId}/${usuarioId}` //http://localhost:3000
       );
 
       const { datos, comentarios } = response.data;
