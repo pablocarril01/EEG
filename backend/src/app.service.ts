@@ -1,12 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { RedisProvider } from './redis/redis.provider';
 import {
-  convertirADCaMicrovoltios,
   calcularMedias,
   calcularMedianas,
   restarMedias,
-  restarMedianas,
-  eliminarSenoideNotch,
+  aplicarFiltroMedianaPorBloques,
+  calcularMediana,
 } from './filtros/filtros';
 
 @Injectable()
@@ -100,6 +99,8 @@ export class AppService {
       console.log(medianas);
 
       processedData = restarMedias(processedData, medias);
+
+      processedData = aplicarFiltroMedianaPorBloques(processedData, 50);
 
       //processedData = eliminarSenoideNotch(processedData, 50, 500);
 

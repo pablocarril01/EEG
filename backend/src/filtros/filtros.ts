@@ -84,3 +84,44 @@ export function eliminarSenoideNotch(
     return [];
   }
 }
+
+export function aplicarFiltroMedianaPorBloques(
+  data: number[][],
+  bloqueSize: number = 50,
+): number[][] {
+  const filtrado: number[][] = [];
+
+  for (let i = 0; i < data.length; i += bloqueSize) {
+    const bloque = data.slice(i, i + bloqueSize);
+
+    // Para cada canal (columna)
+    const medianas: number[] = [];
+    for (let canal = 0; canal < 8; canal++) {
+      const valores = bloque
+        .map((row) => row[canal])
+        .filter((val) => val !== undefined);
+      const mediana = calcularMediana(valores);
+      medianas.push(mediana);
+    }
+
+    // Restar la mediana a cada valor del bloque
+    const bloqueFiltrado = bloque.map((row) =>
+      row.map((valor, canal) => valor - medianas[canal]),
+    );
+
+    filtrado.push(...bloqueFiltrado);
+  }
+
+  return filtrado;
+}
+
+// Función auxiliar para calcular la mediana
+function calcularMediana(arr: number[]): number {
+  const sorted = [...arr].sort((a, b) => a - b);
+  const n = sorted.length;
+  const medio = Math.floor(n / 2);
+
+  if (n === 0) return 0;
+
+  return n % 2 === 0 ? (sorted[medio - 1] + sorted[medio]) / 2 : sorted[medio];
+}
