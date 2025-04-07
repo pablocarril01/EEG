@@ -63,30 +63,18 @@ export function eliminarSenoideNotch(
   frecuenciaObjetivo = 50,
   sampleRate = 500,
 ): number[][] {
-  if (!datos || datos.length === 0) {
-    console.warn('🚨 Datos vacíos');
-    return [];
-  }
-
+  // Crear un filtro notch por canal
   const filtros = Array.from(
     { length: 8 },
     () => new IIRFilter('notch', sampleRate, 2, frecuenciaObjetivo),
   );
 
-  try {
-    const filtrado = datos.map((muestra, idx) => {
-      if (!Array.isArray(muestra) || muestra.length !== 8) {
-        console.warn(`⚠️ Muestra inválida en índice ${idx}:`, muestra);
-        return new Array(8).fill(0); // o puedes omitirla con `return null`
-      }
-      return muestra.map((valor, canal) => filtros[canal].process(valor));
-    });
+  // Aplicar el filtro a cada muestra y canal
+  const filtrado = datos.map((muestra) =>
+    muestra.map((valor, canal) => filtros[canal].process(valor)),
+  );
 
-    return filtrado;
-  } catch (e) {
-    console.error('❌ Error aplicando filtro:', e);
-    return [];
-  }
+  return filtrado;
 }
 
 export function aplicarFiltroMediaPorBloques(

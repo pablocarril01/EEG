@@ -25,9 +25,23 @@ const App: React.FC = () => {
     try {
       if (!proyectoId || !usuarioId) return;
 
-      const response = await axios.get(
-        `/api/hexValues/${proyectoId}/${usuarioId}` //http://localhost:3000
-      );
+      let response;
+
+      try {
+        response = await axios.get(
+          `http://localhost:3000/api/hexValues/${proyectoId}/${usuarioId}`
+        );
+      } catch {
+        try {
+          // Por si en algún entorno quieres intentar otra ruta (ej. producción o proxy)
+          response = await axios.get(
+            `/api/hexValues/${proyectoId}/${usuarioId}`
+          );
+        } catch (errorFinal) {
+          console.error("❌ Ambas URLs fallaron:", errorFinal);
+          response = null;
+        }
+      }
 
       const { datos, comentarios } = response.data;
 

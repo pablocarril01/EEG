@@ -4,6 +4,7 @@ import {
   restar32768,
   aplicarFiltroMedianaPorBloques,
   aplicarFiltroMediaPorBloques,
+  eliminarSenoideNotch,
 } from './filtros/filtros';
 
 @Injectable()
@@ -81,7 +82,7 @@ export class AppService {
 
       processedData = restar32768(processedData);
 
-      //notch
+      //processedData = eliminarSenoideNotch(processedData, 50, 500);
 
       //pasoAlto
 
