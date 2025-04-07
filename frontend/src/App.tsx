@@ -43,7 +43,16 @@ const App: React.FC = () => {
         }
       }
 
-      const { datos, comentarios } = response?.data;
+      let datos: any[] = [];
+      let comentarios: string[] = [];
+
+      if (response) {
+        const data = response.data;
+        datos = data.datos;
+        comentarios = data.comentarios;
+      } else {
+        console.warn("❌ No se pudo obtener respuesta del backend");
+      }
 
       console.log("📌 Datos recibidos:", datos);
       console.log("📌 Comentarios recibidos:", comentarios);
