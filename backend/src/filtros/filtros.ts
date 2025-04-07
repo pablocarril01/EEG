@@ -63,18 +63,69 @@ export function eliminarSenoideNotch(
   frecuenciaObjetivo = 50,
   sampleRate = 500,
 ): number[][] {
-  // Crear un filtro notch por canal
+  if (!Array.isArray(datos) || datos.length === 0 || datos[0].length !== 8) {
+    console.error(
+      '❌ Datos no válidos. Asegúrate de que cada muestra tiene 8 canales.',
+    );
+    return [];
+  }
+
+  const numCanales = 8;
   const filtros = Array.from(
-    { length: 8 },
+    { length: numCanales },
     () => new IIRFilter('notch', sampleRate, 2, frecuenciaObjetivo),
   );
 
-  // Aplicar el filtro a cada muestra y canal
-  const filtrado = datos.map((muestra) =>
-    muestra.map((valor, canal) => filtros[canal].process(valor)),
+  const resultado: number[][] = [];
+
+  for (let i = 0; i < datos.length; i++) {
+    const muestra = datos[i];
+    const muestraFiltrada = new Array<number>(numCanales);
+
+    for (let canal = 0; canal < numCanales; canal++) {
+      muestraFiltrada[canal] = filtros[canal].process(muestra[canal]);
+    }
+
+    resultado.push(muestraFiltrada);
+  }
+
+  return resultado;
+}
+
+export function aplicarPasaAlto(
+  datos: number[][],
+  frecuenciaCorte = 0.5,
+  sampleRate = 500,
+): number[][] {
+  if (!Array.isArray(datos) || datos.length === 0 || datos[0].length !== 8) {
+    throw new Error(
+      '❌ La entrada no es válida: debe ser una lista de listas de 8 valores',
+    );
+  }
+
+  const numCanales = 8;
+  const filtros: IIRFilter[] = Array.from(
+    { length: numCanales },
+    () => new IIRFilter('highpass', sampleRate, 2, frecuenciaCorte),
   );
 
-  return filtrado;
+  // Resultado: lista de listas
+  const resultado: number[][] = [];
+
+  for (let i = 0; i < datos.length; i++) {
+    const muestraOriginal = datos[i];
+    const muestraFiltrada: number[] = [];
+
+    for (let canal = 0; canal < numCanales; canal++) {
+      const valor = muestraOriginal[canal];
+      const filtrado = filtros[canal].process(valor);
+      muestraFiltrada.push(filtrado);
+    }
+
+    resultado.push(muestraFiltrada);
+  }
+
+  return resultado;
 }
 
 export function aplicarFiltroMediaPorBloques(

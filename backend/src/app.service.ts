@@ -5,6 +5,7 @@ import {
   aplicarFiltroMedianaPorBloques,
   aplicarFiltroMediaPorBloques,
   eliminarSenoideNotch,
+  aplicarPasaAlto,
 } from './filtros/filtros';
 
 @Injectable()
@@ -80,11 +81,11 @@ export class AppService {
 
       // Inicio de Filtrado de medidas
 
-      processedData = restar32768(processedData);
+      processedData = restar32768(processedData).filter((f) => f.length === 8);
 
-      //processedData = eliminarSenoideNotch(processedData, 50, 500);
+      processedData = eliminarSenoideNotch(processedData);
 
-      //pasoAlto
+      //processedData = aplicarPasaAlto(processedData, 0.5, 500); // Frecuencia de corte a 1Hz
 
       //pasoBajo
 
