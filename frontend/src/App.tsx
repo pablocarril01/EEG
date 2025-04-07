@@ -43,7 +43,7 @@ const App: React.FC = () => {
         }
       }
 
-      const { datos, comentarios } = response.data;
+      const { datos, comentarios } = response?.data;
 
       console.log("📌 Datos recibidos:", datos);
       console.log("📌 Comentarios recibidos:", comentarios);
