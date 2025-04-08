@@ -60,7 +60,7 @@ export class AppService {
       if (!rawData || rawData.length === 0) return { datos: [], comentarios };
 
       console.log('📌 Datos crudos de Redis:', rawData);
-      console.log('📌 Comentarios crudos de Redis:', comentarios);
+      // console.log('📌 Comentarios crudos de Redis:', comentarios);
 
       let processedData: number[][] = [];
 

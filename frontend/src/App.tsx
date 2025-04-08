@@ -3,7 +3,6 @@ import ChartComponent from "./components/ChartComponent";
 import axios from "axios";
 
 import { TIEMPO_ACTUALIZACION } from "./config";
-
 import "./estilos.css";
 
 const App: React.FC = () => {
@@ -13,6 +12,7 @@ const App: React.FC = () => {
   const [comentarios, setComentarios] = useState<string[]>([]);
   const [isFetching, setIsFetching] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [shouldZero, setShouldZero] = useState(false);
 
   useEffect(() => {
     document.body.classList.add("body");
@@ -21,60 +21,74 @@ const App: React.FC = () => {
     };
   }, []);
 
-  const fetchData = async () => {
+  const isDataDifferent = (a: number[][], b: number[][]) => {
+    if (a.length !== b.length) return true;
+    for (let i = 0; i < a.length; i++) {
+      if (!a[i] || !b[i]) return true;
+      if (a[i].length !== b[i].length) return true;
+      for (let j = 0; j < a[i].length; j++) {
+        if (a[i][j] !== b[i][j]) return true;
+      }
+    }
+    return false;
+  };
+
+  const fetchFromBackend = async (): Promise<{
+    datos: number[][];
+    comentarios: string[];
+  } | null> => {
     try {
-      if (!proyectoId || !usuarioId) return;
-
       let response;
-
       try {
         response = await axios.get(
           `http://localhost:3000/api/hexValues/${proyectoId}/${usuarioId}`
         );
       } catch {
-        try {
-          // Por si en algún entorno quieres intentar otra ruta (ej. producción o proxy)
-          response = await axios.get(
-            `/api/hexValues/${proyectoId}/${usuarioId}`
-          );
-        } catch (errorFinal) {
-          console.error("❌ Ambas URLs fallaron:", errorFinal);
-          response = null;
-        }
+        response = await axios.get(`/api/hexValues/${proyectoId}/${usuarioId}`);
       }
 
-      let datos: any[] = [];
-      let comentarios: string[] = [];
+      if (!response || !Array.isArray(response.data?.datos)) return null;
 
-      if (response) {
-        const data = response.data;
-        datos = data.datos;
-        comentarios = data.comentarios;
-      } else {
-        console.warn("❌ No se pudo obtener respuesta del backend");
-      }
-
-      console.log("📌 Datos recibidos:", datos);
-      console.log("📌 Comentarios recibidos:", comentarios);
-
-      if (!Array.isArray(datos) || datos.length === 0) {
-        throw new Error("Los datos recibidos no son válidos");
-      }
-
-      setChartData(datos);
-      setComentarios(comentarios);
+      return {
+        datos: response.data.datos,
+        comentarios: Array.isArray(response.data.comentarios)
+          ? response.data.comentarios
+          : [],
+      };
     } catch (error) {
-      console.error("❌ Error al obtener los datos:", error);
+      console.error("❌ Error al obtener datos:", error);
+      return null;
     }
   };
 
-  useEffect(() => {
-    if (isFetching) {
-      fetchData();
-      const intervalId = setInterval(fetchData, TIEMPO_ACTUALIZACION);
-      return () => clearInterval(intervalId);
+  const fetchUntilNewData = async () => {
+    console.log("⏳ Esperando datos nuevos del backend...");
+    let nuevosDatos: number[][] = [];
+    let nuevosComentarios: string[] = [];
+
+    while (true) {
+      const result = await fetchFromBackend();
+      if (result && isDataDifferent(result.datos, chartData)) {
+        nuevosDatos = result.datos;
+        nuevosComentarios = result.comentarios;
+        break;
+      }
+      // Espera medio segundo antes de reintentar
+      await new Promise((resolve) => setTimeout(resolve, 500));
     }
-  }, [isFetching, proyectoId, usuarioId]);
+
+    console.log("✅ Nuevos datos detectados. Iniciando animación.");
+    setChartData(nuevosDatos);
+    setComentarios(nuevosComentarios);
+    setShouldZero(false);
+    setIsAnimating(true);
+  };
+
+  const handleAnimationEnd = () => {
+    if (isFetching) {
+      fetchUntilNewData(); // 🚀 buscar datos diferentes antes de animar de nuevo
+    }
+  };
 
   return (
     <div className="app-container">
@@ -108,7 +122,7 @@ const App: React.FC = () => {
         <button
           onClick={() => {
             setIsFetching(true);
-            setIsAnimating(true);
+            fetchUntilNewData(); // primer ciclo
           }}
           disabled={isFetching}
           className="btn btn-start"
@@ -132,6 +146,9 @@ const App: React.FC = () => {
           data={chartData}
           isAnimating={isAnimating}
           usuarioId={usuarioId}
+          onAnimationEnd={handleAnimationEnd}
+          shouldZero={shouldZero}
+          animationDuration={TIEMPO_ACTUALIZACION}
         />
       </div>
 

@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { TIEMPO_ACTUALIZACION } from "../config";
 import {
   LineChart,
   Line,
   XAxis,
   YAxis,
-  //Tooltip,
   ResponsiveContainer,
   ReferenceLine,
 } from "recharts";
@@ -20,6 +18,9 @@ interface ChartComponentProps {
   data: number[][];
   isAnimating: boolean;
   usuarioId: string;
+  onAnimationEnd?: () => void;
+  shouldZero?: boolean;
+  animationDuration: number;
 }
 
 const channelNames = ["FP2", "T4", "O2", "C4", "C3", "O1", "T3", "FP1"];
@@ -28,6 +29,9 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   data = [],
   isAnimating,
   usuarioId,
+  onAnimationEnd,
+  shouldZero = false,
+  animationDuration,
 }) => {
   const [cursorIndex, setCursorIndex] = useState(0);
   const [displayedData, setDisplayedData] = useState<ChartData[]>([]);
@@ -39,53 +43,30 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
 
   useEffect(() => {
     if (data.length > 0) {
-      setDisplayedData((prevData) => {
-        if (prevData.length === 0) {
-          return data.map((entry) => {
-            const formattedEntry: ChartData = {};
-            entry.forEach((value, i) => {
-              formattedEntry[channelNames[i] || `Canal ${i + 1}`] = value;
-            });
-            return formattedEntry;
-          });
-        }
-        return prevData;
-      });
+      if (displayedData.length !== data.length) {
+        setDisplayedData(new Array(data.length).fill({}));
+      }
       setCursorIndex(0);
     }
   }, [data]);
 
-  const [previousSweep, setPreviousSweep] = useState<number[][]>([]);
-
   useEffect(() => {
     if (isAnimating && data.length > 0) {
-      const isSameSweep =
-        previousSweep.length === data.length &&
-        previousSweep.every((row, i) =>
-          row.every((val, j) => val === data[i][j])
-        );
-
-      const finalData = isSameSweep
+      const finalData = shouldZero
         ? data.map((entry) => new Array(entry.length).fill(0))
         : data;
 
-      setPreviousSweep(data);
-
-      setDisplayedData((prevData) => {
-        const newData = finalData.map((entry) => {
-          const formattedEntry: ChartData = {};
-          entry.forEach((value, i) => {
-            formattedEntry[channelNames[i] || `Canal ${i + 1}`] = value;
-          });
-          return formattedEntry;
+      const formattedData = finalData.map((entry) => {
+        const formattedEntry: ChartData = {};
+        entry.forEach((value, i) => {
+          formattedEntry[channelNames[i] || `Canal ${i + 1}`] = value;
         });
-
-        return prevData.length > 0 ? [...prevData] : newData;
+        return formattedEntry;
       });
 
       const startTime = Date.now();
-      const totalTime = TIEMPO_ACTUALIZACION;
-      const totalPoints = finalData.length - 1;
+      const totalTime = animationDuration;
+      const totalPoints = formattedData.length - 1;
 
       const interval = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
@@ -99,16 +80,10 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
 
         setDisplayedData((prevData) => {
           const newData = [...prevData];
-
           for (let i = 0; i <= currentIndex; i++) {
-            if (!finalData[i]) continue;
-
             newData[i] = {
               ...newData[i],
-              ...finalData[i].reduce((acc, value, j) => {
-                acc[channelNames[j] || `Canal ${j + 1}`] = value;
-                return acc;
-              }, {} as ChartData),
+              ...formattedData[i],
             };
           }
           return newData;
@@ -116,12 +91,14 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
 
         if (progress >= 1) {
           clearInterval(interval);
+          setCursorIndex(0);
+          if (onAnimationEnd) onAnimationEnd();
         }
       }, 16);
 
       return () => clearInterval(interval);
     }
-  }, [isAnimating, data]);
+  }, [isAnimating, data, shouldZero, animationDuration]);
 
   if (displayedData.length === 0) {
     return <p style={{ color: "#E0E0E0" }}>No hay datos para mostrar</p>;
@@ -145,18 +122,16 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
       {channels.map((channel, i) => (
         <div key={i} className="chart-box">
           <h3 className="chart-title">{channel}</h3>
-
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={displayedData}>
               <XAxis hide={true} />
               <YAxis
                 width={0}
                 stroke="#E0E0E0"
-                domain={[-2000, 2000]} //(2.5 * 1e6) / (32768 * 3600)
+                domain={[-2000, 2000]}
                 allowDataOverflow={true}
                 tick={false}
               />
-              {/* <Tooltip /> */}
               <Line
                 type="monotone"
                 dataKey={channel}
