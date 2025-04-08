@@ -55,10 +55,24 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     }
   }, [data]);
 
+  const [previousSweep, setPreviousSweep] = useState<number[][]>([]);
+
   useEffect(() => {
     if (isAnimating && data.length > 0) {
+      const isSameSweep =
+        previousSweep.length === data.length &&
+        previousSweep.every((row, i) =>
+          row.every((val, j) => val === data[i][j])
+        );
+
+      const finalData = isSameSweep
+        ? data.map((entry) => new Array(entry.length).fill(0))
+        : data;
+
+      setPreviousSweep(data);
+
       setDisplayedData((prevData) => {
-        const newData = data.map((entry) => {
+        const newData = finalData.map((entry) => {
           const formattedEntry: ChartData = {};
           entry.forEach((value, i) => {
             formattedEntry[channelNames[i] || `Canal ${i + 1}`] = value;
@@ -71,7 +85,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
 
       const startTime = Date.now();
       const totalTime = TIEMPO_ACTUALIZACION;
-      const totalPoints = data.length - 1;
+      const totalPoints = finalData.length - 1;
 
       const interval = setInterval(() => {
         const elapsedTime = Date.now() - startTime;
@@ -87,11 +101,11 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           const newData = [...prevData];
 
           for (let i = 0; i <= currentIndex; i++) {
-            if (!data[i]) continue;
+            if (!finalData[i]) continue;
 
             newData[i] = {
               ...newData[i],
-              ...data[i].reduce((acc, value, j) => {
+              ...finalData[i].reduce((acc, value, j) => {
                 acc[channelNames[j] || `Canal ${j + 1}`] = value;
                 return acc;
               }, {} as ChartData),
