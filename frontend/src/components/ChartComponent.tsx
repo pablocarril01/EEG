@@ -22,7 +22,7 @@ interface ChartComponentProps {
   usuarioId: string;
 }
 
-const channelNames = ["FP1", "FP2", "T1", "T2", "T3", "T4", "C3", "C4"];
+const channelNames = ["FP2", "T4", "O2", "C4", "C3", "O1", "T3", "FP1"];
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
   data = [],

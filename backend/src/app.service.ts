@@ -4,8 +4,9 @@ import {
   restar32768,
   aplicarFiltroMedianaPorBloques,
   aplicarFiltroMediaPorBloques,
-  eliminarSenoideNotch,
-  aplicarPasaAlto,
+  filterNotch50Hz,
+  filterHighPassButterworth,
+  filterLowPassButterworth,
 } from './filtros/filtros';
 
 @Injectable()
@@ -83,11 +84,11 @@ export class AppService {
 
       processedData = restar32768(processedData).filter((f) => f.length === 8);
 
-      processedData = eliminarSenoideNotch(processedData);
+      processedData = filterNotch50Hz(processedData);
 
-      //processedData = aplicarPasaAlto(processedData, 0.5, 500); // Frecuencia de corte a 1Hz
+      processedData = filterHighPassButterworth(processedData);
 
-      //pasoBajo
+      processedData = filterLowPassButterworth(processedData);
 
       processedData = aplicarFiltroMedianaPorBloques(processedData, 50);
 

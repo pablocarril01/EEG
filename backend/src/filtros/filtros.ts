@@ -199,3 +199,166 @@ function calcularMediana(arr: number[]): number {
 
   return n % 2 === 0 ? (sorted[medio - 1] + sorted[medio]) / 2 : sorted[medio];
 }
+
+export function filterHighPassButterworth(signals: number[][]): number[][] {
+  const sampleRate = 500; // Hz
+  const cutoffFreq = 0.5; // Hz
+
+  // Cálculo de coeficientes del filtro Butterworth paso alto de segundo orden
+  const calcCoefficients = (fc: number, fs: number) => {
+    const omega = (2 * Math.PI * fc) / fs;
+    const cos_omega = Math.cos(omega);
+    const sin_omega = Math.sin(omega);
+    const alpha = sin_omega / (2 * Math.sqrt(2)); // Q = sqrt(2)/2 for Butterworth
+
+    const b0 = (1 + cos_omega) / 2;
+    const b1 = -(1 + cos_omega);
+    const b2 = (1 + cos_omega) / 2;
+    const a0 = 1 + alpha;
+    const a1 = -2 * cos_omega;
+    const a2 = 1 - alpha;
+
+    // Normalizar coeficientes
+    return {
+      b: [b0 / a0, b1 / a0, b2 / a0],
+      a: [1, a1 / a0, a2 / a0],
+    };
+  };
+
+  const { b, a } = calcCoefficients(cutoffFreq, sampleRate);
+
+  // Aplicar el filtro a una sola señal
+  const applyFilter = (signal: number[]): number[] => {
+    const y: number[] = [];
+
+    let x1 = 0,
+      x2 = 0;
+    let y1 = 0,
+      y2 = 0;
+
+    for (let i = 0; i < signal.length; i++) {
+      const x0 = signal[i];
+      const y0 = b[0] * x0 + b[1] * x1 + b[2] * x2 - a[1] * y1 - a[2] * y2;
+
+      y.push(y0);
+
+      x2 = x1;
+      x1 = x0;
+      y2 = y1;
+      y1 = y0;
+    }
+
+    return y;
+  };
+
+  // Aplicar a todas las señales
+  return signals.map((signal) => applyFilter(signal));
+}
+
+export function filterLowPassButterworth(signals: number[][]): number[][] {
+  const sampleRate = 500; // Hz
+  const cutoffFreq = 160; // Hz
+
+  // Cálculo de coeficientes del filtro Butterworth paso bajo de segundo orden
+  const calcCoefficients = (fc: number, fs: number) => {
+    const omega = (2 * Math.PI * fc) / fs;
+    const cos_omega = Math.cos(omega);
+    const sin_omega = Math.sin(omega);
+    const alpha = sin_omega / (2 * Math.sqrt(2)); // Q = sqrt(2)/2 for Butterworth
+
+    const b0 = (1 - cos_omega) / 2;
+    const b1 = 1 - cos_omega;
+    const b2 = (1 - cos_omega) / 2;
+    const a0 = 1 + alpha;
+    const a1 = -2 * cos_omega;
+    const a2 = 1 - alpha;
+
+    // Normalizar coeficientes
+    return {
+      b: [b0 / a0, b1 / a0, b2 / a0],
+      a: [1, a1 / a0, a2 / a0],
+    };
+  };
+
+  const { b, a } = calcCoefficients(cutoffFreq, sampleRate);
+
+  // Función para aplicar el filtro a una sola señal
+  const applyFilter = (signal: number[]): number[] => {
+    const y: number[] = [];
+
+    let x1 = 0,
+      x2 = 0;
+    let y1 = 0,
+      y2 = 0;
+
+    for (let i = 0; i < signal.length; i++) {
+      const x0 = signal[i];
+      const y0 = b[0] * x0 + b[1] * x1 + b[2] * x2 - a[1] * y1 - a[2] * y2;
+
+      y.push(y0);
+
+      x2 = x1;
+      x1 = x0;
+      y2 = y1;
+      y1 = y0;
+    }
+
+    return y;
+  };
+
+  return signals.map((signal) => applyFilter(signal));
+}
+
+export function filterNotch50Hz(signals: number[][]): number[][] {
+  const sampleRate = 500; // Hz
+  const notchFreq = 50; // Hz (frecuencia de rechazo)
+  const Q = 30; // Factor de calidad (más alto = más estrecho)
+
+  // Cálculo de coeficientes del filtro notch
+  const calcNotchCoefficients = (f0: number, fs: number, Q: number) => {
+    const omega = (2 * Math.PI * f0) / fs;
+    const alpha = Math.sin(omega) / (2 * Q);
+    const cos_omega = Math.cos(omega);
+
+    const b0 = 1;
+    const b1 = -2 * cos_omega;
+    const b2 = 1;
+    const a0 = 1 + alpha;
+    const a1 = -2 * cos_omega;
+    const a2 = 1 - alpha;
+
+    // Normalizar coeficientes
+    return {
+      b: [b0 / a0, b1 / a0, b2 / a0],
+      a: [1, a1 / a0, a2 / a0],
+    };
+  };
+
+  const { b, a } = calcNotchCoefficients(notchFreq, sampleRate, Q);
+
+  // Aplicar el filtro a una sola señal
+  const applyFilter = (signal: number[]): number[] => {
+    const y: number[] = [];
+
+    let x1 = 0,
+      x2 = 0;
+    let y1 = 0,
+      y2 = 0;
+
+    for (let i = 0; i < signal.length; i++) {
+      const x0 = signal[i];
+      const y0 = b[0] * x0 + b[1] * x1 + b[2] * x2 - a[1] * y1 - a[2] * y2;
+
+      y.push(y0);
+
+      x2 = x1;
+      x1 = x0;
+      y2 = y1;
+      y1 = y0;
+    }
+
+    return y;
+  };
+
+  return signals.map((signal) => applyFilter(signal));
+}
