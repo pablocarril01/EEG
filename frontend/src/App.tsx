@@ -73,7 +73,6 @@ const App: React.FC = () => {
         nuevosComentarios = result.comentarios;
         break;
       }
-      // Espera medio segundo antes de reintentar
       await new Promise((resolve) => setTimeout(resolve, 500));
     }
 
