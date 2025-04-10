@@ -1,25 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ChartComponent from "./components/ChartComponent";
 import axios from "axios";
-
 import { TIEMPO_ACTUALIZACION } from "./config";
 import "./estilos.css";
 
+type AppState = "INICIAL" | "MOSTRANDO_DATOS" | "MOSTRANDO_CEROS";
+
 const App: React.FC = () => {
-  const [proyectoId, setProyectoId] = useState("PEPI");
   const [usuarioId, setUsuarioId] = useState("Pablo");
   const [chartData, setChartData] = useState<number[][]>([]);
   const [comentarios, setComentarios] = useState<string[]>([]);
-  const [isFetching, setIsFetching] = useState(false);
+  const [estado, setEstado] = useState<AppState>("INICIAL");
   const [isAnimating, setIsAnimating] = useState(false);
-  const [shouldZero, setShouldZero] = useState(false);
 
-  useEffect(() => {
-    document.body.classList.add("body");
-    return () => {
-      document.body.classList.remove("body");
-    };
-  }, []);
+  const previousData = useRef<number[][]>([]);
+  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
 
   const isDataDifferent = (a: number[][], b: number[][]) => {
     if (a.length !== b.length) return true;
@@ -33,21 +28,19 @@ const App: React.FC = () => {
     return false;
   };
 
-  const fetchFromBackend = async (): Promise<{
-    datos: number[][];
-    comentarios: string[];
-  } | null> => {
+  const fetchFromBackend = async () => {
     try {
       let response;
       try {
         response = await axios.get(
-          `http://localhost:3000/api/hexValues/${proyectoId}/${usuarioId}`
+          `http://localhost:3000/api/hexValues/PEPI/${usuarioId}`
         );
       } catch {
-        response = await axios.get(`/api/hexValues/${proyectoId}/${usuarioId}`);
+        response = await axios.get(`/api/hexValues/PEPI/${usuarioId}`);
       }
 
-      if (!response || !Array.isArray(response.data?.datos)) return null;
+      if (!response?.data?.datos || !Array.isArray(response.data.datos))
+        return null;
 
       return {
         datos: response.data.datos,
@@ -61,110 +54,134 @@ const App: React.FC = () => {
     }
   };
 
-  const fetchUntilNewData = async () => {
-    console.log("⏳ Esperando datos nuevos del backend...");
-    let nuevosDatos: number[][] = [];
-    let nuevosComentarios: string[] = [];
-
-    while (true) {
-      const result = await fetchFromBackend();
-      if (result && isDataDifferent(result.datos, chartData)) {
-        nuevosDatos = result.datos;
-        nuevosComentarios = result.comentarios;
-        break;
-      }
-      await new Promise((resolve) => setTimeout(resolve, 500));
+  const iniciarConDatos = async () => {
+    const result = await fetchFromBackend();
+    if (result) {
+      setChartData(result.datos);
+      previousData.current = result.datos;
+      setComentarios(result.comentarios);
+      setEstado("MOSTRANDO_DATOS");
+      setIsAnimating(true);
     }
-
-    console.log("✅ Nuevos datos detectados. Iniciando animación.");
-    setChartData(nuevosDatos);
-    setComentarios(nuevosComentarios);
-    setShouldZero(false);
-    setIsAnimating(true);
   };
 
-  const handleAnimationEnd = () => {
-    if (isFetching) {
-      fetchUntilNewData(); // 🚀 buscar datos diferentes antes de animar de nuevo
+  const manejarFinAnimacion = async () => {
+    if (!isAnimating) return;
+
+    if (estado === "MOSTRANDO_DATOS") {
+      const result = await fetchFromBackend();
+      if (result) {
+        if (isDataDifferent(result.datos, previousData.current)) {
+          setChartData(result.datos);
+          previousData.current = result.datos;
+          setComentarios(result.comentarios);
+          setIsAnimating(true);
+        } else {
+          setEstado("MOSTRANDO_CEROS");
+          setIsAnimating(true);
+        }
+      }
+    } else if (estado === "MOSTRANDO_CEROS") {
+      setIsAnimating(true);
     }
+  };
+
+  useEffect(() => {
+    if (estado === "MOSTRANDO_CEROS") {
+      if (pollingInterval.current) clearInterval(pollingInterval.current);
+      pollingInterval.current = setInterval(async () => {
+        const result = await fetchFromBackend();
+        if (result && isDataDifferent(result.datos, previousData.current)) {
+          clearInterval(pollingInterval.current!);
+          setChartData(result.datos);
+          previousData.current = result.datos;
+          setComentarios(result.comentarios);
+          setEstado("MOSTRANDO_DATOS");
+          setIsAnimating(true);
+        }
+      }, 1000);
+    }
+
+    return () => {
+      if (pollingInterval.current) clearInterval(pollingInterval.current);
+    };
+  }, [estado]);
+
+  const detener = () => {
+    setIsAnimating(false);
+    setEstado("INICIAL");
+    if (pollingInterval.current) clearInterval(pollingInterval.current);
   };
 
   return (
     <div className="app-container">
-      <div className="selector-container">
-        <label className="selector-label">
-          Proyecto ID:
-          <select
-            value={proyectoId}
-            onChange={(e) => setProyectoId(e.target.value)}
-            className="selector-dropdown"
-          >
-            <option value="PEPI">PEPI</option>
-          </select>
-        </label>
-        <label className="selector-label">
-          Usuario ID:
-          <select
-            value={usuarioId}
-            onChange={(e) => setUsuarioId(e.target.value)}
-            className="selector-dropdown"
-          >
-            <option value="Pablo">Pablo</option>
-            <option value="Ernesto">Ernesto</option>
-            <option value="1">1</option>
-            <option value="2">2</option>
-          </select>
-        </label>
-      </div>
+      {estado === "INICIAL" && (
+        <div className="selector-container">
+          <label className="selector-label">
+            Usuario ID:
+            <select
+              value={usuarioId}
+              onChange={(e) => setUsuarioId(e.target.value)}
+              className="selector-dropdown"
+            >
+              <option value="Pablo">Pablo</option>
+              <option value="Ernesto">Ernesto</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+            </select>
+          </label>
+          <button className="btn btn-start" onClick={iniciarConDatos}>
+            Cargar Datos
+          </button>
+        </div>
+      )}
 
-      <div className="buttons-container">
-        <button
-          onClick={() => {
-            setIsFetching(true);
-            fetchUntilNewData(); // primer ciclo
-          }}
-          disabled={isFetching}
-          className="btn btn-start"
-        >
-          {isFetching ? "Actualizando..." : "Cargar Datos"}
-        </button>
-        <button
-          onClick={() => {
-            setIsFetching(false);
-            setIsAnimating(false);
-          }}
-          disabled={!isFetching}
-          className="btn btn-stop"
-        >
-          Detener
-        </button>
-      </div>
+      {estado !== "INICIAL" && (
+        <>
+          <div className="top-bar">
+            <div className="paciente-label">Paciente: {usuarioId}</div>
+            {estado !== "INICIAL" && (
+              <div
+                className={`estado-circulo ${
+                  estado === "MOSTRANDO_DATOS" ? "verde" : "gris"
+                }`}
+              ></div>
+            )}
+          </div>
 
-      <div className="chart-container">
-        <ChartComponent
-          data={chartData}
-          isAnimating={isAnimating}
-          usuarioId={usuarioId}
-          onAnimationEnd={handleAnimationEnd}
-          shouldZero={shouldZero}
-          animationDuration={TIEMPO_ACTUALIZACION}
-        />
-      </div>
+          <div className="buttons-container">
+            <button className="btn btn-stop" onClick={detener}>
+              Volver
+            </button>
+          </div>
 
-      <div className="comment-section">
-        <h2>Comentarios</h2>
-        {comentarios.length > 0 ? (
-          <ul className="comment-list">
-            {comentarios.map((comentario, index) => (
-              <li key={index} className="comment-item">
-                {comentario}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <p>No hay comentarios disponibles.</p>
-        )}
-      </div>
+          <div className="chart-container">
+            <ChartComponent
+              data={chartData}
+              isAnimating={isAnimating}
+              usuarioId={usuarioId}
+              onAnimationEnd={manejarFinAnimacion}
+              shouldZero={estado === "MOSTRANDO_CEROS"}
+              animationDuration={TIEMPO_ACTUALIZACION}
+            />
+          </div>
+
+          <div className="comment-section">
+            <h2>Comentarios</h2>
+            {comentarios.length > 0 ? (
+              <ul className="comment-list">
+                {comentarios.map((comentario, index) => (
+                  <li key={index} className="comment-item">
+                    {comentario}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p>No hay comentarios disponibles.</p>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 };

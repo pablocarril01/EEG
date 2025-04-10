@@ -312,7 +312,7 @@ export function filterLowPassButterworth(signals: number[][]): number[][] {
 export function filterNotch50Hz(signals: number[][]): number[][] {
   const sampleRate = 500; // Hz
   const notchFreq = 50; // Hz (frecuencia de rechazo)
-  const Q = 30; // Factor de calidad (más alto = más estrecho)
+  const Q = 50; // Factor de calidad (más alto = más estrecho)
 
   // Cálculo de coeficientes del filtro notch
   const calcNotchCoefficients = (f0: number, fs: number, Q: number) => {
