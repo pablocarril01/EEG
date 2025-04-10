@@ -2,11 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { RedisProvider } from './redis/redis.provider';
 import {
   restar32768,
-  aplicarFiltroMedianaPorBloques,
-  aplicarFiltroMediaPorBloques,
-  filterNotch50Hz,
-  filterHighPassButterworth,
-  filterLowPassButterworth,
+  filtroNotch,
+  filtroPasoAlto,
+  filtroPasoBajo,
+  filtroMediana,
+  filtroMedia,
 } from './filtros/filtros';
 
 @Injectable()
@@ -84,15 +84,15 @@ export class AppService {
 
       processedData = restar32768(processedData).filter((f) => f.length === 8);
 
-      processedData = filterNotch50Hz(processedData);
+      processedData = filtroNotch(processedData);
 
-      processedData = filterHighPassButterworth(processedData);
+      processedData = filtroPasoAlto(processedData);
 
-      processedData = filterLowPassButterworth(processedData);
+      processedData = filtroPasoBajo(processedData);
 
-      processedData = aplicarFiltroMedianaPorBloques(processedData, 50);
+      processedData = filtroMediana(processedData);
 
-      processedData = aplicarFiltroMediaPorBloques(processedData, 50);
+      processedData = filtroMedia(processedData);
 
       //      Reducción de valores
 
