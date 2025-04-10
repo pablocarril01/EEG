@@ -78,11 +78,13 @@ const App: React.FC = () => {
           setIsAnimating(true);
         } else {
           setEstado("MOSTRANDO_CEROS");
-          setIsAnimating(true);
+          setIsAnimating(false);
+          setTimeout(() => setIsAnimating(true), 0); // 🔁 reiniciar ciclo de ceros
         }
       }
     } else if (estado === "MOSTRANDO_CEROS") {
-      setIsAnimating(true);
+      setIsAnimating(false);
+      setTimeout(() => setIsAnimating(true), 0); // 🔁 ciclo continuo de ceros
     }
   };
 
@@ -140,11 +142,12 @@ const App: React.FC = () => {
         <>
           <div className="top-bar">
             <div className="paciente-label">Paciente: {usuarioId}</div>
-            <div
-              className={`estado-circulo ${
-                estado === "MOSTRANDO_DATOS" ? "verde" : "gris"
-              }`}
-            />
+            {estado === "MOSTRANDO_DATOS" && (
+              <div className="estado-circulo verde"></div>
+            )}
+            {estado === "MOSTRANDO_CEROS" && (
+              <div className="estado-circulo gris"></div>
+            )}
           </div>
 
           <div className="buttons-container">
