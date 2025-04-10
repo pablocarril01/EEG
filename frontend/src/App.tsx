@@ -140,13 +140,11 @@ const App: React.FC = () => {
         <>
           <div className="top-bar">
             <div className="paciente-label">Paciente: {usuarioId}</div>
-            {estado !== "INICIAL" && (
-              <div
-                className={`estado-circulo ${
-                  estado === "MOSTRANDO_DATOS" ? "verde" : "gris"
-                }`}
-              ></div>
-            )}
+            <div
+              className={`estado-circulo ${
+                estado === "MOSTRANDO_DATOS" ? "verde" : "gris"
+              }`}
+            />
           </div>
 
           <div className="buttons-container">
