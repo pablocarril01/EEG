@@ -23,7 +23,8 @@ interface ChartComponentProps {
   animationDuration: number;
 }
 
-const channelNames = ["FP2", "T4", "O2", "C4", "C3", "O1", "T3", "FP1"];
+// Nuevo orden visual deseado
+const channelNames = ["FP1", "FP2", "T3", "T4", "O1", "O2", "C3", "C4"];
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
   data = [],
@@ -56,10 +57,14 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         ? data.map((entry) => new Array(entry.length).fill(0))
         : data;
 
+      // Mapeo desde el orden original a: ["FP1", "FP2", "T3", "T4", "O1", "O2", "C3", "C4"]
+      // Orden original: ["FP2", "T4", "O2", "C4", "C3", "O1", "T3", "FP1"]
+      const indexMap = [7, 0, 6, 1, 5, 2, 4, 3];
+
       const formattedData = finalData.map((entry) => {
         const formattedEntry: ChartData = {};
-        entry.forEach((value, i) => {
-          formattedEntry[channelNames[i] || `Canal ${i + 1}`] = value;
+        indexMap.forEach((originalIndex, newIndex) => {
+          formattedEntry[channelNames[newIndex]] = entry[originalIndex];
         });
         return formattedEntry;
       });

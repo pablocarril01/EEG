@@ -84,15 +84,15 @@ export class AppService {
 
       processedData = restar32768(processedData).filter((f) => f.length === 8);
 
-      processedData = filterNotch50Hz(processedData);
+      //processedData = filterNotch50Hz(processedData);
 
-      processedData = filterHighPassButterworth(processedData);
+      //processedData = filterHighPassButterworth(processedData);
 
-      processedData = filterLowPassButterworth(processedData);
+      //processedData = filterLowPassButterworth(processedData);
 
-      processedData = aplicarFiltroMedianaPorBloques(processedData, 50);
+      //processedData = aplicarFiltroMedianaPorBloques(processedData, 50);
 
-      processedData = aplicarFiltroMediaPorBloques(processedData, 50);
+      //processedData = aplicarFiltroMediaPorBloques(processedData, 50);
 
       //      Reducción de valores
 
