@@ -18,13 +18,20 @@ const App: React.FC = () => {
 
   const isDataDifferent = (a: number[][], b: number[][]) => {
     if (a.length !== b.length) return true;
+
     for (let i = 0; i < a.length; i++) {
       if (!a[i] || !b[i]) return true;
-      if (a[i].length !== b[i].length) return true;
-      for (let j = 0; j < a[i].length; j++) {
-        if (a[i][j] !== b[i][j]) return true;
+
+      const aSlice = a[i].slice(-15);
+      const bSlice = b[i].slice(-15);
+
+      if (aSlice.length !== bSlice.length) return true;
+
+      for (let j = 0; j < aSlice.length; j++) {
+        if (aSlice[j] !== bSlice[j]) return true;
       }
     }
+
     return false;
   };
 

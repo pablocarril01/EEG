@@ -11,6 +11,7 @@ import {
 
 @Injectable()
 export class AppService {
+  private previousData: number[][] = []; // Buffer de los últimos 50 datos
   constructor(private readonly redisProvider: RedisProvider) {}
 
   async getProyectoInfo(
@@ -79,10 +80,12 @@ export class AppService {
           });
         });
       });
+      const cantidadNuevos = processedData.length;
 
+      const combinedData = [...this.previousData.slice(-50), ...processedData];
       // Inicio de Filtrado de medidas
 
-      processedData = restar32768(processedData).filter((f) => f.length === 8);
+      processedData = restar32768(combinedData).filter((f) => f.length === 8);
 
       processedData = filtroNotch(processedData);
 
@@ -96,11 +99,14 @@ export class AppService {
 
       //      Reducción de valores
 
-      //processedData = processedData.filter((_, index) => index % 2 === 0);
+      processedData = processedData.slice(-cantidadNuevos);
+      processedData = processedData.filter((_, index) => index % 2 === 0);
       processedData = processedData.map((fila) =>
         fila.map((valor) => Number(valor.toFixed(2))),
       );
 
+      // Guardar los últimos 50 datos para el próximo ciclo
+      this.previousData = combinedData.slice(-50);
       // Fin de Filtrado de medidas
 
       return { datos: processedData, comentarios };
