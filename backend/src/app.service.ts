@@ -11,7 +11,8 @@ import {
 
 @Injectable()
 export class AppService {
-  private previousData: number[][] = []; // Buffer de los últimos 50 datos
+  private previousData: number[][] = [];
+
   constructor(private readonly redisProvider: RedisProvider) {}
 
   async getProyectoInfo(
@@ -25,7 +26,6 @@ export class AppService {
         usuarioId,
       );
 
-      // Procesar cada elemento de la variable "comentarios"
       comentarios = comentarios.map((item) => {
         const itemSinAmpersand = item.replace(/&/g, '');
         const partes = itemSinAmpersand.split('$');
@@ -35,11 +35,10 @@ export class AppService {
           const mensaje = partes[1];
 
           if (!isNaN(fechaUnix)) {
-            // Convertir a fecha local en España
             const fecha = new Date(fechaUnix * 1000);
             const fechaLegible = fecha
               .toLocaleString('es-ES', {
-                timeZone: 'Europe/Madrid', // Ajuste a la zona horaria de España
+                timeZone: 'Europe/Madrid',
                 day: '2-digit',
                 month: '2-digit',
                 year: 'numeric',
@@ -58,12 +57,12 @@ export class AppService {
         }
       });
 
-      if (!rawData || rawData.length === 0) return { datos: [], comentarios };
+      if (!rawData || rawData.length === 0)
+        return { datos: [], comentarios };
 
       console.log('📌 Datos crudos de Redis:', rawData);
-      // console.log('📌 Comentarios crudos de Redis:', comentarios);
 
-      let processedData: number[][] = [];
+      let newData: number[][] = [];
 
       rawData.forEach((entry) => {
         entry = entry.replace(/\s/g, '').replace(/^i|f$/g, '');
@@ -75,39 +74,29 @@ export class AppService {
             const hexValues = group.split(',').filter((v) => v.length > 0);
             if (hexValues.length === 8) {
               const decimalValues = hexValues.map((val) => parseInt(val, 16));
-              processedData.push(decimalValues);
+              newData.push(decimalValues);
             }
           });
         });
       });
-      //const cantidadNuevos = processedData.length;
 
-      //const combinedData = [...this.previousData.slice(-50), ...processedData];
-      // Inicio de Filtrado de medidas
+      const cantidadNuevos = newData.length;
 
-      //processedData = restar32768(combinedData).filter((f) => f.length === 8);
+      let processedData = restar32768(newData).filter((f) => f.length === 8);
 
-      //processedData = filtroNotch(processedData);
+      processedData = filtroNotch(processedData);
+      processedData = filtroPasoAlto(processedData);
+      processedData = filtroPasoBajo(processedData);
+      processedData = filtroMediana(processedData);
+      processedData = filtroMedia(processedData);
 
-      //processedData = filtroPasoAlto(processedData);
-
-      //processedData = filtroPasoBajo(processedData);
-
-      //processedData = filtroMediana(processedData);
-
-      //processedData = filtroMedia(processedData);
-
-      //      Reducción de valores
-
-      //processedData = processedData.slice(-cantidadNuevos);
+      processedData = processedData.slice(-cantidadNuevos);
       processedData = processedData.filter((_, index) => index % 2 === 0);
       processedData = processedData.map((fila) =>
         fila.map((valor) => Number(valor.toFixed(2))),
       );
 
-      // Guardar los últimos 50 datos para el próximo ciclo
-      //this.previousData = combinedData.slice(-50);
-      // Fin de Filtrado de medidas
+      this.previousData = processedData.slice(-50);
 
       return { datos: processedData, comentarios };
     } catch (error) {
