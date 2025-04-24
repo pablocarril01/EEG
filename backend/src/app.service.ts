@@ -80,33 +80,33 @@ export class AppService {
           });
         });
       });
-      const cantidadNuevos = processedData.length;
+      //const cantidadNuevos = processedData.length;
 
-      const combinedData = [...this.previousData.slice(-50), ...processedData];
+      //const combinedData = [...this.previousData.slice(-50), ...processedData];
       // Inicio de Filtrado de medidas
 
-      processedData = restar32768(combinedData).filter((f) => f.length === 8);
+      //processedData = restar32768(combinedData).filter((f) => f.length === 8);
 
-      processedData = filtroNotch(processedData);
+      //processedData = filtroNotch(processedData);
 
-      processedData = filtroPasoAlto(processedData);
+      //processedData = filtroPasoAlto(processedData);
 
-      processedData = filtroPasoBajo(processedData);
+      //processedData = filtroPasoBajo(processedData);
 
-      processedData = filtroMediana(processedData);
+      //processedData = filtroMediana(processedData);
 
-      processedData = filtroMedia(processedData);
+      //processedData = filtroMedia(processedData);
 
       //      Reducción de valores
 
-      processedData = processedData.slice(-cantidadNuevos);
+      //processedData = processedData.slice(-cantidadNuevos);
       processedData = processedData.filter((_, index) => index % 2 === 0);
       processedData = processedData.map((fila) =>
         fila.map((valor) => Number(valor.toFixed(2))),
       );
 
       // Guardar los últimos 50 datos para el próximo ciclo
-      this.previousData = combinedData.slice(-50);
+      //this.previousData = combinedData.slice(-50);
       // Fin de Filtrado de medidas
 
       return { datos: processedData, comentarios };

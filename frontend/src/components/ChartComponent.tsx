@@ -133,8 +133,8 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
               <YAxis
                 width={0}
                 stroke="#E0E0E0"
-                domain={[-2000, 2000]}
-                allowDataOverflow={true}
+                //domain={[-2000, 2000]}
+                //allowDataOverflow={true}
                 tick={false}
               />
               <Line
