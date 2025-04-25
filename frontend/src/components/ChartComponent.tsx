@@ -35,10 +35,12 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
 }) => {
   const [cursorIndex, setCursorIndex] = useState(0);
   const [displayedData, setDisplayedData] = useState<ChartData[]>([]);
+  const [readyToAnimate, setReadyToAnimate] = useState(false);
 
   useEffect(() => {
     setCursorIndex(0);
     setDisplayedData([]);
+    setReadyToAnimate(false);
   }, [usuarioId]);
 
   useEffect(() => {
@@ -48,70 +50,71 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
       }
       setCursorIndex(0);
 
-      // 🚀 Esperamos un frame para asegurar que el render inicial se complete antes de animar
+      // 🔁 Esperamos dos frames para asegurarnos de que el gráfico está renderizado
       requestAnimationFrame(() => {
-        if (isAnimating) {
-          setDisplayedData((prev) => [...prev]);
-        }
+        requestAnimationFrame(() => {
+          setReadyToAnimate(true);
+        });
       });
     }
   }, [data]);
 
   useEffect(() => {
-    if (isAnimating && data.length > 0) {
-      const finalData = shouldZero
-        ? data.map((entry) => new Array(entry.length).fill(0))
-        : data;
+    if (!readyToAnimate || !isAnimating || data.length === 0) return;
 
-      const indexMap = [7, 0, 6, 1, 5, 2, 4, 3];
+    const finalData = shouldZero
+      ? data.map((entry) => new Array(entry.length).fill(0))
+      : data;
 
-      const formattedData = finalData.map((entry) => {
-        const formattedEntry: ChartData = {};
-        indexMap.forEach((originalIndex, newIndex) => {
-          formattedEntry[channelNames[newIndex]] = entry[originalIndex];
-        });
-        return formattedEntry;
+    const indexMap = [7, 0, 6, 1, 5, 2, 4, 3];
+
+    const formattedData = finalData.map((entry) => {
+      const formattedEntry: ChartData = {};
+      indexMap.forEach((originalIndex, newIndex) => {
+        formattedEntry[channelNames[newIndex]] = entry[originalIndex];
+      });
+      return formattedEntry;
+    });
+
+    const totalTime = animationDuration;
+    const totalPoints = formattedData.length - 1;
+    const startTime = performance.now();
+    let animationFrameId: number;
+
+    const animate = (currentTime: number) => {
+      const elapsedTime = currentTime - startTime;
+      const progress = Math.min(elapsedTime / totalTime, 1);
+      const currentIndex = Math.min(
+        Math.floor(progress * totalPoints),
+        totalPoints
+      );
+
+      setCursorIndex(currentIndex);
+
+      setDisplayedData((prevData) => {
+        const newData = [...prevData];
+        for (let i = 0; i <= currentIndex; i++) {
+          newData[i] = {
+            ...newData[i],
+            ...formattedData[i],
+          };
+        }
+        return newData;
       });
 
-      const totalTime = animationDuration;
-      const totalPoints = formattedData.length - 1;
-      const startTime = performance.now();
-      let animationFrameId: number;
+      if (progress < 1) {
+        animationFrameId = requestAnimationFrame(animate);
+      } else {
+        setCursorIndex(0);
+        setReadyToAnimate(false);
+        if (onAnimationEnd) onAnimationEnd();
+      }
+    };
 
-      const animate = (currentTime: number) => {
-        const elapsedTime = currentTime - startTime;
-        const progress = Math.min(elapsedTime / totalTime, 1);
-        const currentIndex = Math.min(
-          Math.floor(progress * totalPoints),
-          totalPoints
-        );
+    animationFrameId = requestAnimationFrame(animate);
 
-        setCursorIndex(currentIndex);
-
-        setDisplayedData((prevData) => {
-          const newData = [...prevData];
-          for (let i = 0; i <= currentIndex; i++) {
-            newData[i] = {
-              ...newData[i],
-              ...formattedData[i],
-            };
-          }
-          return newData;
-        });
-
-        if (progress < 1) {
-          animationFrameId = requestAnimationFrame(animate);
-        } else {
-          setCursorIndex(0);
-          if (onAnimationEnd) onAnimationEnd();
-        }
-      };
-
-      animationFrameId = requestAnimationFrame(animate);
-
-      return () => cancelAnimationFrame(animationFrameId);
-    }
-  }, [isAnimating, data, shouldZero, animationDuration]);
+    return () => cancelAnimationFrame(animationFrameId);
+  }, [readyToAnimate, isAnimating, data, shouldZero, animationDuration]);
 
   if (displayedData.length === 0) {
     return <p style={{ color: "#E0E0E0" }}>No hay datos para mostrar</p>;
