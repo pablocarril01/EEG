@@ -15,7 +15,7 @@ const App: React.FC = () => {
   const [estado, setEstado] = useState<AppState>("INICIAL");
   const [isAnimating, setIsAnimating] = useState(false);
   const [cicloCeros, setCicloCeros] = useState(0);
-  const [mostrarSelector, setMostrarSelector] = useState(true); // 🔒 controla el render de la pantalla de inicio
+  const [mostrarSelector, setMostrarSelector] = useState(true);
 
   const previousData = useRef<number[][]>([[0, 0, 0, 0, 0, 0, 0, 0]]);
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
@@ -63,7 +63,7 @@ const App: React.FC = () => {
   const iniciarConDatos = async () => {
     const result = await fetchFromBackend();
     if (result) {
-      setMostrarSelector(false); // 👈 evitar mostrar la pantalla de selección después
+      setMostrarSelector(false);
       setChartData(result.datos);
       previousData.current = result.datos;
       setComentarios(result.comentarios);
@@ -86,20 +86,20 @@ const App: React.FC = () => {
         } else {
           setEstado("MOSTRANDO_CEROS");
           setIsAnimating(false);
-          setTimeout(() => {
+          requestAnimationFrame(() => {
             setChartData(previousData.current);
             setCicloCeros((prev) => prev + 1);
             setIsAnimating(true);
-          }, 0);
+          });
         }
       }
     } else if (estado === "MOSTRANDO_CEROS") {
       setIsAnimating(false);
-      setTimeout(() => {
+      requestAnimationFrame(() => {
         setChartData(previousData.current);
         setCicloCeros((prev) => prev + 1);
         setIsAnimating(true);
-      }, 0);
+      });
     }
   };
 
@@ -127,7 +127,7 @@ const App: React.FC = () => {
   const detener = () => {
     setIsAnimating(false);
     setEstado("INICIAL");
-    setMostrarSelector(true); // 👈 habilita de nuevo el selector solo al pulsar "Volver"
+    setMostrarSelector(true);
     if (pollingInterval.current) clearInterval(pollingInterval.current);
   };
 
