@@ -4,7 +4,7 @@ import axios from "axios";
 import { TIEMPO_ACTUALIZACION } from "./config";
 import "./estilos.css";
 
-type AppState = "INICIAL" | "MOSTRANDO_DATOS" | "MOSTRANDO_CEROS";
+type AppState = "INICIAL" | "MOSTRANDO_DATOS"; // Eliminamos MOSTRANDO_CEROS del tipo activo
 
 const App: React.FC = () => {
   const [usuarioId, setUsuarioId] = useState("Pablo");
@@ -17,21 +17,21 @@ const App: React.FC = () => {
   const [mostrarSelector, setMostrarSelector] = useState(true);
 
   const previousData = useRef<number[][]>([[0, 0, 0, 0, 0, 0, 0, 0]]);
-  const pollingInterval = useRef<NodeJS.Timeout | null>(null);
+  // const pollingInterval = useRef<NodeJS.Timeout | null>(null); // ya no lo usamos
 
-  const isDataDifferent = (a: number[][], b: number[][]) => {
-    if (a.length !== b.length) return true;
-    for (let i = 0; i < a.length; i++) {
-      if (!a[i] || !b[i]) return true;
-      const aSlice = a[i].slice(-15);
-      const bSlice = b[i].slice(-15);
-      if (aSlice.length !== bSlice.length) return true;
-      for (let j = 0; j < aSlice.length; j++) {
-        if (aSlice[j] !== bSlice[j]) return true;
-      }
-    }
-    return false;
-  };
+  // const isDataDifferent = (a: number[][], b: number[][]) => {
+  //   if (a.length !== b.length) return true;
+  //   for (let i = 0; i < a.length; i++) {
+  //     if (!a[i] || !b[i]) return true;
+  //     const aSlice = a[i].slice(-15);
+  //     const bSlice = b[i].slice(-15);
+  //     if (aSlice.length !== bSlice.length) return true;
+  //     for (let j = 0; j < aSlice.length; j++) {
+  //       if (aSlice[j] !== bSlice[j]) return true;
+  //     }
+  //   }
+  //   return false;
+  // };
 
   const fetchFromBackend = async () => {
     try {
@@ -66,47 +66,37 @@ const App: React.FC = () => {
   };
 
   const manejarFinAnimacion = async () => {
-    if (estado === "MOSTRANDO_DATOS") {
-      const result = await fetchFromBackend();
-      if (result) {
-        if (isDataDifferent(result.datos, previousData.current)) {
-          setChartData(result.datos);
-          previousData.current = result.datos;
-          setComentarios(result.comentarios);
-        } else {
-          setEstado("MOSTRANDO_CEROS");
-          setCicloCeros((prev) => prev + 1); // ⚡ animación inmediata
-        }
-      }
-    } else if (estado === "MOSTRANDO_CEROS") {
-      setCicloCeros((prev) => prev + 1); // ⚡ continuar sin pausa
+    // En esta versión, simplemente pedimos datos y los mostramos
+    const result = await fetchFromBackend();
+    if (result) {
+      setChartData(result.datos);
+      previousData.current = result.datos;
+      setComentarios(result.comentarios);
+      setCicloCeros((prev) => prev + 1); // Fuerza nuevo barrido
     }
+
+    // Código anterior que detectaba si los datos no habían cambiado y activaba ceros:
+    // if (estado === "MOSTRANDO_DATOS") {
+    //   const result = await fetchFromBackend();
+    //   if (result) {
+    //     if (isDataDifferent(result.datos, previousData.current)) {
+    //       setChartData(result.datos);
+    //       previousData.current = result.datos;
+    //       setComentarios(result.comentarios);
+    //     } else {
+    //       setEstado("MOSTRANDO_CEROS");
+    //       setCicloCeros((prev) => prev + 1);
+    //     }
+    //   }
+    // } else if (estado === "MOSTRANDO_CEROS") {
+    //   setCicloCeros((prev) => prev + 1);
+    // }
   };
-
-  useEffect(() => {
-    if (estado === "MOSTRANDO_CEROS") {
-      if (pollingInterval.current) clearInterval(pollingInterval.current);
-      pollingInterval.current = setInterval(async () => {
-        const result = await fetchFromBackend();
-        if (result && isDataDifferent(result.datos, previousData.current)) {
-          clearInterval(pollingInterval.current!);
-          setChartData(result.datos);
-          previousData.current = result.datos;
-          setComentarios(result.comentarios);
-          setEstado("MOSTRANDO_DATOS");
-        }
-      }, 1000);
-    }
-
-    return () => {
-      if (pollingInterval.current) clearInterval(pollingInterval.current);
-    };
-  }, [estado]);
 
   const detener = () => {
     setEstado("INICIAL");
     setMostrarSelector(true);
-    if (pollingInterval.current) clearInterval(pollingInterval.current);
+    // if (pollingInterval.current) clearInterval(pollingInterval.current);
   };
 
   return (
@@ -136,11 +126,7 @@ const App: React.FC = () => {
         <>
           <div className="top-bar">
             <div className="paciente-label">Paciente: {usuarioId}</div>
-            <div
-              className={`estado-circulo ${
-                estado === "MOSTRANDO_DATOS" ? "verde" : "gris"
-              }`}
-            ></div>
+            <div className="estado-circulo verde" />
           </div>
 
           <div className="buttons-container">
@@ -152,10 +138,10 @@ const App: React.FC = () => {
           <div className="chart-container">
             <ChartComponent
               data={chartData}
-              isAnimating={true} // siempre animando mientras no se detenga
+              isAnimating={true}
               usuarioId={usuarioId}
               onAnimationEnd={manejarFinAnimacion}
-              shouldZero={estado === "MOSTRANDO_CEROS"}
+              shouldZero={false} // ya no lo usamos, pero lo dejamos por si vuelves a activarlo
               animationDuration={TIEMPO_ACTUALIZACION}
               cicloCeros={cicloCeros}
             />
