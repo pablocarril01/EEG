@@ -8,30 +8,29 @@ type AppState = "INICIAL" | "MOSTRANDO_DATOS" | "MOSTRANDO_CEROS";
 
 const App: React.FC = () => {
   const [usuarioId, setUsuarioId] = useState("Pablo");
-  const [chartData, setChartData] = useState<number[][]>([]);
+  const [chartData, setChartData] = useState<number[][]>([
+    [0, 0, 0, 0, 0, 0, 0, 0],
+  ]);
   const [comentarios, setComentarios] = useState<string[]>([]);
   const [estado, setEstado] = useState<AppState>("INICIAL");
   const [isAnimating, setIsAnimating] = useState(false);
+  const [cicloCeros, setCicloCeros] = useState(0);
+  const [mostrarSelector, setMostrarSelector] = useState(true); // 🔒 controla el render de la pantalla de inicio
 
-  const previousData = useRef<number[][]>([]);
+  const previousData = useRef<number[][]>([[0, 0, 0, 0, 0, 0, 0, 0]]);
   const pollingInterval = useRef<NodeJS.Timeout | null>(null);
 
   const isDataDifferent = (a: number[][], b: number[][]) => {
     if (a.length !== b.length) return true;
-
     for (let i = 0; i < a.length; i++) {
       if (!a[i] || !b[i]) return true;
-
       const aSlice = a[i].slice(-15);
       const bSlice = b[i].slice(-15);
-
       if (aSlice.length !== bSlice.length) return true;
-
       for (let j = 0; j < aSlice.length; j++) {
         if (aSlice[j] !== bSlice[j]) return true;
       }
     }
-
     return false;
   };
 
@@ -64,6 +63,7 @@ const App: React.FC = () => {
   const iniciarConDatos = async () => {
     const result = await fetchFromBackend();
     if (result) {
+      setMostrarSelector(false); // 👈 evitar mostrar la pantalla de selección después
       setChartData(result.datos);
       previousData.current = result.datos;
       setComentarios(result.comentarios);
@@ -86,12 +86,20 @@ const App: React.FC = () => {
         } else {
           setEstado("MOSTRANDO_CEROS");
           setIsAnimating(false);
-          setTimeout(() => setIsAnimating(true), 0); // 🔁 reiniciar ciclo de ceros
+          setTimeout(() => {
+            setChartData(previousData.current);
+            setCicloCeros((prev) => prev + 1);
+            setIsAnimating(true);
+          }, 0);
         }
       }
     } else if (estado === "MOSTRANDO_CEROS") {
       setIsAnimating(false);
-      setTimeout(() => setIsAnimating(true), 0); // 🔁 ciclo continuo de ceros
+      setTimeout(() => {
+        setChartData(previousData.current);
+        setCicloCeros((prev) => prev + 1);
+        setIsAnimating(true);
+      }, 0);
     }
   };
 
@@ -119,12 +127,13 @@ const App: React.FC = () => {
   const detener = () => {
     setIsAnimating(false);
     setEstado("INICIAL");
+    setMostrarSelector(true); // 👈 habilita de nuevo el selector solo al pulsar "Volver"
     if (pollingInterval.current) clearInterval(pollingInterval.current);
   };
 
   return (
     <div className="app-container">
-      {estado === "INICIAL" && (
+      {mostrarSelector && (
         <div className="selector-container">
           <label className="selector-label">
             Usuario ID:
@@ -145,16 +154,15 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {estado !== "INICIAL" && (
+      {!mostrarSelector && (
         <>
           <div className="top-bar">
             <div className="paciente-label">Paciente: {usuarioId}</div>
-            {estado === "MOSTRANDO_DATOS" && (
-              <div className="estado-circulo verde"></div>
-            )}
-            {estado === "MOSTRANDO_CEROS" && (
-              <div className="estado-circulo gris"></div>
-            )}
+            <div
+              className={`estado-circulo ${
+                estado === "MOSTRANDO_DATOS" ? "verde" : "gris"
+              }`}
+            ></div>
           </div>
 
           <div className="buttons-container">
@@ -171,6 +179,7 @@ const App: React.FC = () => {
               onAnimationEnd={manejarFinAnimacion}
               shouldZero={estado === "MOSTRANDO_CEROS"}
               animationDuration={TIEMPO_ACTUALIZACION}
+              cicloCeros={cicloCeros}
             />
           </div>
 

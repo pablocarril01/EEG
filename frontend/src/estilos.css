@@ -79,6 +79,14 @@ body {
 .chart-container {
   margin-top: 30px;
   width: 98%;
+  height: 100%;
+  background-color: #000;
+}
+
+.chart-canvas {
+  width: 100%;
+  height: 1200px; /* ⬅️ Ajusta aquí la altura visible real del canvas */
+  display: block;
 }
 
 .chart-box {

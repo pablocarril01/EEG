@@ -1,18 +1,4 @@
-import React, { useState, useEffect } from "react";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  ResponsiveContainer,
-  ReferenceLine,
-} from "recharts";
-
-import "../estilos.css";
-
-interface ChartData {
-  [key: string]: number | string;
-}
+import React, { useRef, useEffect } from "react";
 
 interface ChartComponentProps {
   data: number[][];
@@ -21,9 +7,23 @@ interface ChartComponentProps {
   onAnimationEnd?: () => void;
   shouldZero?: boolean;
   animationDuration: number;
+  cicloCeros?: number;
 }
 
 const channelNames = ["FP1", "FP2", "T3", "T4", "O1", "O2", "C3", "C4"];
+const colors = [
+  "#66C2FF",
+  "#7FFF7F",
+  "#FFD700",
+  "#FF99CC",
+  "#FFA07A",
+  "#DDA0DD",
+  "#40E0D0",
+  "#B0E0E6",
+];
+
+// Orden correcto si los canales llegan desordenados del backend
+const indexMap = [7, 0, 6, 1, 5, 2, 4, 3];
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
   data = [],
@@ -32,134 +32,128 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   onAnimationEnd,
   shouldZero = false,
   animationDuration,
+  cicloCeros = 0,
 }) => {
-  const [cursorIndex, setCursorIndex] = useState(0);
-  const [displayedData, setDisplayedData] = useState<ChartData[]>([]);
-  const [readyToAnimate, setReadyToAnimate] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const displayedDataRef = useRef<number[][]>([]);
+  const startTimeRef = useRef<number>(0);
+
+  const width = 1200;
+  const height = 1200;
+
+  const numChannels = channelNames.length;
+  const channelHeight = height / numChannels;
+  const yMin = -2000;
+  const yMax = 2000;
 
   useEffect(() => {
-    setCursorIndex(0);
-    setDisplayedData([]);
-    setReadyToAnimate(false);
+    displayedDataRef.current = [];
   }, [usuarioId]);
 
   useEffect(() => {
-    if (data.length > 0) {
-      if (displayedData.length !== data.length) {
-        setDisplayedData(new Array(data.length).fill({}));
-      }
-      setCursorIndex(0);
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-      // 🔁 Esperamos dos frames para asegurarnos de que el gráfico está renderizado
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          setReadyToAnimate(true);
-        });
-      });
-    }
-  }, [data]);
-
-  useEffect(() => {
-    if (!readyToAnimate || !isAnimating || data.length === 0) return;
-
-    const finalData = shouldZero
-      ? data.map((entry) => new Array(entry.length).fill(0))
-      : data;
-
-    const indexMap = [7, 0, 6, 1, 5, 2, 4, 3];
-
-    const formattedData = finalData.map((entry) => {
-      const formattedEntry: ChartData = {};
-      indexMap.forEach((originalIndex, newIndex) => {
-        formattedEntry[channelNames[newIndex]] = entry[originalIndex];
-      });
-      return formattedEntry;
-    });
-
-    const totalTime = animationDuration;
-    const totalPoints = formattedData.length - 1;
-    const startTime = performance.now();
     let animationFrameId: number;
 
-    const animate = (currentTime: number) => {
-      const elapsedTime = currentTime - startTime;
-      const progress = Math.min(elapsedTime / totalTime, 1);
-      const currentIndex = Math.min(
-        Math.floor(progress * totalPoints),
-        totalPoints
-      );
+    const remappedData = data.map((entry) =>
+      indexMap.map((idx) => entry?.[idx] ?? 0)
+    );
 
-      setCursorIndex(currentIndex);
+    const finalData: number[][] = shouldZero
+      ? remappedData.map(() => new Array(numChannels).fill(0))
+      : remappedData;
 
-      setDisplayedData((prevData) => {
-        const newData = [...prevData];
-        for (let i = 0; i <= currentIndex; i++) {
-          newData[i] = {
-            ...newData[i],
-            ...formattedData[i],
-          };
+    const totalPoints = finalData.length;
+    if (totalPoints === 0) return;
+
+    if (displayedDataRef.current.length !== totalPoints) {
+      displayedDataRef.current = Array(totalPoints)
+        .fill(0)
+        .map(() => Array(numChannels).fill(0));
+    }
+
+    const draw = (timestamp: number) => {
+      if (!startTimeRef.current) startTimeRef.current = timestamp;
+      const elapsed = timestamp - startTimeRef.current;
+      const progress = Math.min(elapsed / animationDuration, 1);
+      const currentCursor = Math.floor(progress * totalPoints);
+
+      for (let i = 0; i <= currentCursor && i < totalPoints; i++) {
+        displayedDataRef.current[i] = finalData[i];
+      }
+
+      ctx.clearRect(0, 0, width, height);
+
+      for (let c = 0; c < numChannels; c++) {
+        ctx.beginPath();
+        ctx.strokeStyle = colors[c % colors.length];
+        ctx.lineWidth = 1;
+
+        const offsetY = c * channelHeight;
+        const midY = offsetY + channelHeight / 2;
+        const scaleY = channelHeight / 2 / (yMax - yMin / 2);
+
+        let hasMoved = false;
+
+        for (let i = 0; i < totalPoints; i++) {
+          const val = displayedDataRef.current[i]?.[c];
+
+          if (val === undefined || val < yMin || val > yMax) {
+            hasMoved = false;
+            continue;
+          }
+
+          const x = (i / totalPoints) * width;
+          const y = midY - val * scaleY;
+
+          if (!hasMoved) {
+            ctx.moveTo(x, y);
+            hasMoved = true;
+          } else {
+            ctx.lineTo(x, y);
+          }
         }
-        return newData;
-      });
+
+        ctx.stroke();
+      }
+
+      const cursorX = (currentCursor / totalPoints) * width;
+      ctx.beginPath();
+      ctx.moveTo(cursorX, 0);
+      ctx.lineTo(cursorX, height);
+      ctx.strokeStyle = "white";
+      ctx.lineWidth = 2;
+      ctx.stroke();
 
       if (progress < 1) {
-        animationFrameId = requestAnimationFrame(animate);
+        animationFrameId = requestAnimationFrame(draw);
       } else {
-        setCursorIndex(0);
-        setReadyToAnimate(false);
+        startTimeRef.current = 0;
         if (onAnimationEnd) onAnimationEnd();
       }
     };
 
-    animationFrameId = requestAnimationFrame(animate);
+    if (isAnimating && finalData.length > 0) {
+      startTimeRef.current = 0;
+      animationFrameId = requestAnimationFrame(draw);
+    }
 
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [readyToAnimate, isAnimating, data, shouldZero, animationDuration]);
-
-  if (displayedData.length === 0) {
-    return <p style={{ color: "#E0E0E0" }}>No hay datos para mostrar</p>;
-  }
-
-  const channelColors = [
-    "#66C2FF",
-    "#7FFF7F",
-    "#FFD700",
-    "#FF99CC",
-    "#FFA07A",
-    "#DDA0DD",
-    "#40E0D0",
-    "#B0E0E6",
-  ];
-
-  const channels = Object.keys(displayedData[0]);
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [isAnimating, data, shouldZero, animationDuration, cicloCeros, usuarioId]);
 
   return (
     <div className="chart-container">
-      {channels.map((channel, i) => (
-        <div key={i} className="chart-box">
-          <h3 className="chart-title">{channel}</h3>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={displayedData}>
-              <XAxis hide={true} />
-              <YAxis
-                width={0}
-                stroke="#E0E0E0"
-                domain={[-2000, 2000]}
-                allowDataOverflow={true}
-                tick={false}
-              />
-              <Line
-                type="monotone"
-                dataKey={channel}
-                stroke={channelColors[i % channelColors.length]}
-                dot={false}
-                isAnimationActive={false}
-              />
-              <ReferenceLine x={cursorIndex} stroke="#FFFFFF" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      ))}
+      <canvas
+        ref={canvasRef}
+        width={1200}
+        height={1200}
+        className="chart-canvas"
+      />
     </div>
   );
 };
