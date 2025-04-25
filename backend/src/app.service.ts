@@ -91,7 +91,7 @@ export class AppService {
       processedData = filtroMedia(processedData);
 
       processedData = processedData.slice(-cantidadNuevos);
-      processedData = processedData.filter((_, index) => index % 2 === 0);
+      processedData = processedData.filter((_, index) => index % 10 === 0);
       processedData = processedData.map((fila) =>
         fila.map((valor) => Number(valor.toFixed(2))),
       );
