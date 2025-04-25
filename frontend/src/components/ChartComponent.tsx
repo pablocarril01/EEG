@@ -23,7 +23,6 @@ interface ChartComponentProps {
   animationDuration: number;
 }
 
-// Nuevo orden visual deseado
 const channelNames = ["FP1", "FP2", "T3", "T4", "O1", "O2", "C3", "C4"];
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -48,6 +47,13 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         setDisplayedData(new Array(data.length).fill({}));
       }
       setCursorIndex(0);
+
+      // 🚀 Esperamos un frame para asegurar que el render inicial se complete antes de animar
+      requestAnimationFrame(() => {
+        if (isAnimating) {
+          setDisplayedData((prev) => [...prev]);
+        }
+      });
     }
   }, [data]);
 
@@ -57,8 +63,6 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         ? data.map((entry) => new Array(entry.length).fill(0))
         : data;
 
-      // Mapeo desde el orden original a: ["FP1", "FP2", "T3", "T4", "O1", "O2", "C3", "C4"]
-      // Orden original: ["FP2", "T4", "O2", "C4", "C3", "O1", "T3", "FP1"]
       const indexMap = [7, 0, 6, 1, 5, 2, 4, 3];
 
       const formattedData = finalData.map((entry) => {
@@ -69,12 +73,13 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         return formattedEntry;
       });
 
-      const startTime = Date.now();
       const totalTime = animationDuration;
       const totalPoints = formattedData.length - 1;
+      const startTime = performance.now();
+      let animationFrameId: number;
 
-      const interval = setInterval(() => {
-        const elapsedTime = Date.now() - startTime;
+      const animate = (currentTime: number) => {
+        const elapsedTime = currentTime - startTime;
         const progress = Math.min(elapsedTime / totalTime, 1);
         const currentIndex = Math.min(
           Math.floor(progress * totalPoints),
@@ -94,14 +99,17 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
           return newData;
         });
 
-        if (progress >= 1) {
-          clearInterval(interval);
+        if (progress < 1) {
+          animationFrameId = requestAnimationFrame(animate);
+        } else {
           setCursorIndex(0);
           if (onAnimationEnd) onAnimationEnd();
         }
-      }, 16);
+      };
 
-      return () => clearInterval(interval);
+      animationFrameId = requestAnimationFrame(animate);
+
+      return () => cancelAnimationFrame(animationFrameId);
     }
   }, [isAnimating, data, shouldZero, animationDuration]);
 
