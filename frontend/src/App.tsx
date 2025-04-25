@@ -1,10 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useRef } from "react";
 import ChartComponent from "./components/ChartComponent";
 import axios from "axios";
 import { TIEMPO_ACTUALIZACION } from "./config";
 import "./estilos.css";
 
-type AppState = "INICIAL" | "MOSTRANDO_DATOS"; // Eliminamos MOSTRANDO_CEROS del tipo activo
+// type AppState = "INICIAL" | "MOSTRANDO_DATOS"; // ❌ Ya no se usa
 
 const App: React.FC = () => {
   const [usuarioId, setUsuarioId] = useState("Pablo");
@@ -12,26 +12,11 @@ const App: React.FC = () => {
     [0, 0, 0, 0, 0, 0, 0, 0],
   ]);
   const [comentarios, setComentarios] = useState<string[]>([]);
-  const [estado, setEstado] = useState<AppState>("INICIAL");
+  // const [estado, setEstado] = useState<AppState>("INICIAL"); // ❌ Ya no se usa
   const [cicloCeros, setCicloCeros] = useState(0);
   const [mostrarSelector, setMostrarSelector] = useState(true);
 
   const previousData = useRef<number[][]>([[0, 0, 0, 0, 0, 0, 0, 0]]);
-  // const pollingInterval = useRef<NodeJS.Timeout | null>(null); // ya no lo usamos
-
-  // const isDataDifferent = (a: number[][], b: number[][]) => {
-  //   if (a.length !== b.length) return true;
-  //   for (let i = 0; i < a.length; i++) {
-  //     if (!a[i] || !b[i]) return true;
-  //     const aSlice = a[i].slice(-15);
-  //     const bSlice = b[i].slice(-15);
-  //     if (aSlice.length !== bSlice.length) return true;
-  //     for (let j = 0; j < aSlice.length; j++) {
-  //       if (aSlice[j] !== bSlice[j]) return true;
-  //     }
-  //   }
-  //   return false;
-  // };
 
   const fetchFromBackend = async () => {
     try {
@@ -61,42 +46,23 @@ const App: React.FC = () => {
       setChartData(result.datos);
       previousData.current = result.datos;
       setComentarios(result.comentarios);
-      setEstado("MOSTRANDO_DATOS");
+      // setEstado("MOSTRANDO_DATOS"); // ❌
     }
   };
 
   const manejarFinAnimacion = async () => {
-    // En esta versión, simplemente pedimos datos y los mostramos
     const result = await fetchFromBackend();
     if (result) {
       setChartData(result.datos);
       previousData.current = result.datos;
       setComentarios(result.comentarios);
-      setCicloCeros((prev) => prev + 1); // Fuerza nuevo barrido
+      setCicloCeros((prev) => prev + 1); // 🔁 ciclo inmediato
     }
-
-    // Código anterior que detectaba si los datos no habían cambiado y activaba ceros:
-    // if (estado === "MOSTRANDO_DATOS") {
-    //   const result = await fetchFromBackend();
-    //   if (result) {
-    //     if (isDataDifferent(result.datos, previousData.current)) {
-    //       setChartData(result.datos);
-    //       previousData.current = result.datos;
-    //       setComentarios(result.comentarios);
-    //     } else {
-    //       setEstado("MOSTRANDO_CEROS");
-    //       setCicloCeros((prev) => prev + 1);
-    //     }
-    //   }
-    // } else if (estado === "MOSTRANDO_CEROS") {
-    //   setCicloCeros((prev) => prev + 1);
-    // }
   };
 
   const detener = () => {
-    setEstado("INICIAL");
+    // setEstado("INICIAL"); // ❌
     setMostrarSelector(true);
-    // if (pollingInterval.current) clearInterval(pollingInterval.current);
   };
 
   return (
@@ -141,7 +107,7 @@ const App: React.FC = () => {
               isAnimating={true}
               usuarioId={usuarioId}
               onAnimationEnd={manejarFinAnimacion}
-              shouldZero={false} // ya no lo usamos, pero lo dejamos por si vuelves a activarlo
+              shouldZero={false}
               animationDuration={TIEMPO_ACTUALIZACION}
               cicloCeros={cicloCeros}
             />
