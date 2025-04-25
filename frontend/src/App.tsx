@@ -13,7 +13,6 @@ const App: React.FC = () => {
   ]);
   const [comentarios, setComentarios] = useState<string[]>([]);
   const [estado, setEstado] = useState<AppState>("INICIAL");
-  const [isAnimating, setIsAnimating] = useState(false);
   const [cicloCeros, setCicloCeros] = useState(0);
   const [mostrarSelector, setMostrarSelector] = useState(true);
 
@@ -36,14 +35,9 @@ const App: React.FC = () => {
 
   const fetchFromBackend = async () => {
     try {
-      let response;
-      try {
-        response = await axios.get(
-          `http://localhost:3000/api/hexValues/PEPI/${usuarioId}`
-        );
-      } catch {
-        response = await axios.get(`/api/hexValues/PEPI/${usuarioId}`);
-      }
+      const url = `http://localhost:3000/api/hexValues/PEPI/${usuarioId}`;
+      const fallback = `/api/hexValues/PEPI/${usuarioId}`;
+      const response = await axios.get(url).catch(() => axios.get(fallback));
 
       if (!response?.data?.datos || !Array.isArray(response.data.datos))
         return null;
@@ -68,13 +62,10 @@ const App: React.FC = () => {
       previousData.current = result.datos;
       setComentarios(result.comentarios);
       setEstado("MOSTRANDO_DATOS");
-      setIsAnimating(true);
     }
   };
 
   const manejarFinAnimacion = async () => {
-    if (!isAnimating) return;
-
     if (estado === "MOSTRANDO_DATOS") {
       const result = await fetchFromBackend();
       if (result) {
@@ -82,24 +73,13 @@ const App: React.FC = () => {
           setChartData(result.datos);
           previousData.current = result.datos;
           setComentarios(result.comentarios);
-          setIsAnimating(true);
         } else {
           setEstado("MOSTRANDO_CEROS");
-          setIsAnimating(false);
-          requestAnimationFrame(() => {
-            setChartData(previousData.current);
-            setCicloCeros((prev) => prev + 1);
-            setIsAnimating(true);
-          });
+          setCicloCeros((prev) => prev + 1); // ⚡ animación inmediata
         }
       }
     } else if (estado === "MOSTRANDO_CEROS") {
-      setIsAnimating(false);
-      requestAnimationFrame(() => {
-        setChartData(previousData.current);
-        setCicloCeros((prev) => prev + 1);
-        setIsAnimating(true);
-      });
+      setCicloCeros((prev) => prev + 1); // ⚡ continuar sin pausa
     }
   };
 
@@ -114,7 +94,6 @@ const App: React.FC = () => {
           previousData.current = result.datos;
           setComentarios(result.comentarios);
           setEstado("MOSTRANDO_DATOS");
-          setIsAnimating(true);
         }
       }, 1000);
     }
@@ -125,7 +104,6 @@ const App: React.FC = () => {
   }, [estado]);
 
   const detener = () => {
-    setIsAnimating(false);
     setEstado("INICIAL");
     setMostrarSelector(true);
     if (pollingInterval.current) clearInterval(pollingInterval.current);
@@ -174,7 +152,7 @@ const App: React.FC = () => {
           <div className="chart-container">
             <ChartComponent
               data={chartData}
-              isAnimating={isAnimating}
+              isAnimating={true} // siempre animando mientras no se detenga
               usuarioId={usuarioId}
               onAnimationEnd={manejarFinAnimacion}
               shouldZero={estado === "MOSTRANDO_CEROS"}
