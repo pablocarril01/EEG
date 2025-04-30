@@ -123,6 +123,7 @@ const App: React.FC = () => {
               <option value="Ernesto">Ernesto</option>
               <option value="1">1</option>
               <option value="2">2</option>
+              <option value="4">4</option>
             </select>
           </label>
           <button className="btn btn-start" onClick={iniciarConDatos}>
