@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import ChartComponent from "./components/ChartComponent";
 import { TIEMPO_ACTUALIZACION } from "./config";
-import { io } from "socket.io-client";
+import io from "socket.io-client";
 import "./estilos.css";
 
 type AppState = "INICIAL" | "MOSTRANDO_DATOS" | "MOSTRANDO_CEROS";
