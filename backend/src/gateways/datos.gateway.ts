@@ -3,8 +3,6 @@ import {
   WebSocketServer,
   OnGatewayInit,
   SubscribeMessage,
-  MessageBody,
-  ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
@@ -15,17 +13,15 @@ import { Server, Socket } from 'socket.io';
 })
 export class DatosGateway implements OnGatewayInit {
   @WebSocketServer()
-  server!: Server; // ✅ el "!" dice que lo inyectará NestJS después
+  server!: Server; // '!' asegura a TypeScript que será inicializado por Nest
 
   afterInit() {
     console.log('✅ WebSocket Gateway iniciado');
   }
 
+  // ✅ Firma válida sin decoradores de parámetros
   @SubscribeMessage('joinRoom')
-  handleJoinRoom(
-    @MessageBody() usuarioId: string,
-    @ConnectedSocket() client: Socket,
-  ) {
+  handleJoinRoom(client: Socket, usuarioId: string): void {
     client.join(usuarioId);
     console.log(`👤 Usuario ${usuarioId} se unió a la sala`);
   }

@@ -1,23 +1,33 @@
 {
   "compilerOptions": {
     "module": "CommonJS",
-    "declaration": true,
-    "removeComments": true,
-    "emitDecoratorMetadata": true,
-    "experimentalDecorators": true,
-    "allowSyntheticDefaultImports": true,
     "target": "ES2020",
-    "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
+    "declaration": true,
+    "sourceMap": true,
+    "removeComments": true,
     "incremental": true,
+
+    // ✅ Decoradores necesarios para NestJS
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+
+    // ✅ Compatibilidad y sintaxis
+    "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
+
+    // ✅ Seguridad estricta
+    "strict": true,
     "strictNullChecks": true,
     "forceConsistentCasingInFileNames": true,
+
+    // ✅ Necesario para @WebSocketServer con "!"
     "strictPropertyInitialization": false,
+
+    // Opciones adicionales desactivadas por claridad
     "noImplicitAny": false,
     "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false,
-    "strict": true
+    "noFallthroughCasesInSwitch": false
   }
 }
