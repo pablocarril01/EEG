@@ -1,32 +1,31 @@
 import {
   WebSocketGateway,
   WebSocketServer,
-  OnGatewayInit,
   SubscribeMessage,
+  OnGatewayInit,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 
-@WebSocketGateway({
-  cors: {
-    origin: '*',
-  },
-})
+@WebSocketGateway({ cors: { origin: '*' } })
 export class DatosGateway implements OnGatewayInit {
+  // 👇 Inyección automática del servidor WebSocket
   @WebSocketServer()
-  server!: Server; // '!' asegura a TypeScript que será inicializado por Nest
+  server!: Server;
 
-  afterInit() {
+  // 👇 Se ejecuta una vez al arrancar el gateway
+  afterInit(): void {
     console.log('✅ WebSocket Gateway iniciado');
   }
 
-  // ✅ Firma válida sin decoradores de parámetros
+  // ✅ AQUÍ va el método handleJoinRoom
   @SubscribeMessage('joinRoom')
-  handleJoinRoom(client: Socket, usuarioId: string): void {
-    client.join(usuarioId);
-    console.log(`👤 Usuario ${usuarioId} se unió a la sala`);
+  handleJoinRoom(client: Socket, payload: string): void {
+    client.join(payload); // el payload es el usuarioId
+    console.log(`👤 Usuario ${payload} se unió a la sala`);
   }
 
-  enviarDatos(usuarioId: string, payload: any) {
+  // 👇 Método que tú llamas desde el servicio para emitir datos
+  enviarDatos(usuarioId: string, payload: any): void {
     console.log(
       `📡 Enviando ${payload.datos?.length ?? 0} datos a ${usuarioId}`,
     );
