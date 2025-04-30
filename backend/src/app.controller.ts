@@ -11,6 +11,18 @@ export class AppController {
     @Param('usuarioId') usuarioId: string,
   ) {
     console.log('✅ Entró en getHexValues controlador');
-    return await this.appService.getProyectoInfo(proyectoId, usuarioId);
+
+    const resultado = await this.appService.getProyectoInfo(
+      proyectoId,
+      usuarioId,
+    );
+
+    // Aquí también devolvemos un resumen útil en la respuesta HTTP
+    return {
+      status: 'ok',
+      datos: resultado.datos.slice(-10), // opcional: último bloque para debug
+      total: resultado.datos.length,
+      comentarios: resultado.comentarios,
+    };
   }
 }

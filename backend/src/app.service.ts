@@ -8,12 +8,16 @@ import {
   filtroMediana,
   filtroMedia,
 } from './filtros/filtros';
+import { DatosGateway } from './gateways/datos.gateway';
 
 @Injectable()
 export class AppService {
   private previousData: number[][] = [];
 
-  constructor(private readonly redisProvider: RedisProvider) {}
+  constructor(
+    private readonly redisProvider: RedisProvider,
+    private readonly datosGateway: DatosGateway,
+  ) {}
 
   async getProyectoInfo(
     proyectoId: string,
@@ -26,6 +30,7 @@ export class AppService {
         usuarioId,
       );
 
+      // Procesar comentarios
       comentarios = comentarios.map((item) => {
         const itemSinAmpersand = item.replace(/&/g, '');
         const partes = itemSinAmpersand.split('$');
@@ -57,13 +62,13 @@ export class AppService {
         }
       });
 
-      if (!rawData || rawData.length === 0)
-        return { datos: [], comentarios };
+      if (!rawData || rawData.length === 0) return { datos: [], comentarios };
 
       console.log('📌 Datos crudos de Redis:', rawData);
 
       let newData: number[][] = [];
 
+      // Procesamiento hexadecimal a decimal
       rawData.forEach((entry) => {
         entry = entry.replace(/\s/g, '').replace(/^i|f$/g, '');
         const sequences = entry.split(/fi|if/);
@@ -82,14 +87,15 @@ export class AppService {
 
       const cantidadNuevos = newData.length;
 
+      // Aplicar filtros
       let processedData = restar32768(newData).filter((f) => f.length === 8);
-
       processedData = filtroNotch(processedData);
       processedData = filtroPasoAlto(processedData);
       processedData = filtroPasoBajo(processedData);
       processedData = filtroMediana(processedData);
       processedData = filtroMedia(processedData);
 
+      // Recorte y limpieza
       processedData = processedData.slice(-cantidadNuevos);
       processedData = processedData.filter((_, index) => index % 5 === 0);
       processedData = processedData.map((fila) =>
@@ -97,6 +103,14 @@ export class AppService {
       );
 
       this.previousData = processedData.slice(-50);
+
+      // Emitir los datos por WebSocket
+      console.log('👉 ProcesedData length:', processedData.length);
+      console.log('👉 Comentarios:', comentarios);
+      this.datosGateway.enviarDatos(usuarioId, {
+        datos: processedData,
+        comentarios,
+      });
 
       return { datos: processedData, comentarios };
     } catch (error) {
