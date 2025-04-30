@@ -1,3 +1,6 @@
+// 👇 Esta línea debe estar la primera, antes de cualquier otra
+import 'reflect-metadata';
+
 import * as dotenv from 'dotenv';
 import * as path from 'path';
 
