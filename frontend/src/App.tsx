@@ -41,7 +41,7 @@ const App: React.FC = () => {
     socket.emit("joinRoom", usuarioId);
 
     // ✅ Activar backend para que procese y emita datos por WebSocket
-    fetch(`http://localhost:3000/api/hexValues/PEPI/${usuarioId}`)
+    fetch(`http://193.146.34.10:3000/api/hexValues/PEPI/${usuarioId}`)
       .then((res) => res.json())
       .then((data) => {
         console.log("📡 Backend procesó y respondió:", data);
