@@ -7,7 +7,7 @@ import "./estilos.css";
 type AppState = "INICIAL" | "MOSTRANDO_DATOS" | "MOSTRANDO_CEROS";
 
 // ✅ Conexión al WebSocket del backend
-const socket = io("http://localhost:3000", {
+const socket = io("http://193.146.34.10:3000", {
   transports: ["websocket"],
 });
 
