@@ -2,47 +2,33 @@ import {
   WebSocketGateway,
   WebSocketServer,
   SubscribeMessage,
-  MessageBody,
-  OnGatewayConnection,
   OnGatewayInit,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { EmisionAutomaticaService } from '../servicios/emision-automatica.service';
 
-@WebSocketGateway({
-  cors: {
-    origin: '*',
-  },
-})
-export class DatosGateway implements OnGatewayInit, OnGatewayConnection {
+@WebSocketGateway({ cors: { origin: '*' } })
+export class DatosGateway implements OnGatewayInit {
+  // 👇 Inyección automática del servidor WebSocket
   @WebSocketServer()
-  server: Server;
+  server!: Server;
 
-  constructor(private readonly emisionService: EmisionAutomaticaService) {}
-
-  afterInit() {
-    this.emisionService.setServer(this.server);
-    console.log('✅ Gateway inicializado');
+  // 👇 Se ejecuta una vez al arrancar el gateway
+  afterInit(): void {
+    console.log('✅ WebSocket Gateway iniciado');
   }
 
-  handleConnection(client: Socket) {
-    console.log(`📡 Cliente conectado: ${client.id}`);
-  }
-
+  // ✅ AQUÍ va el método handleJoinRoom
   @SubscribeMessage('joinRoom')
-  handleJoinRoom(@MessageBody() usuarioId: string, client: Socket) {
-    client.join(usuarioId);
-    console.log(`👤 Cliente ${client.id} se unió a la sala: ${usuarioId}`);
+  handleJoinRoom(client: Socket, payload: string): void {
+    client.join(payload); // el payload es el usuarioId
+    console.log(`👤 Usuario ${payload} se unió a la sala`);
   }
 
-  /**
-   * Método para que AppService o cualquier otro servicio pueda emitir datos a un usuario específico
-   */
-  enviarDatos(
-    usuarioId: string,
-    payload: { datos: number[][]; comentarios: string[] },
-  ) {
+  // 👇 Método que tú llamas desde el servicio para emitir datos
+  enviarDatos(usuarioId: string, payload: any): void {
+    console.log(
+      `📡 Enviando ${payload.datos?.length ?? 0} datos a ${usuarioId}`,
+    );
     this.server.to(usuarioId).emit('nuevoDato', payload);
-    console.log(`📤 Datos enviados manualmente a ${usuarioId}:`, payload);
   }
 }

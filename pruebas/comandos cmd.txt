@@ -12,5 +12,3 @@ docker stop $(docker ps -q)
 docker ps
 
 node generateData
-
-pm2 start dist/main.js --name backendEEG

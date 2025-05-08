@@ -1,37 +1,28 @@
-import { Controller, Get, Param, Query } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { AppService } from './app.service';
 
-@Controller('api/hexValues')
+@Controller('api')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
-  /**
-   * Llamado desde el frontend al pulsar "Cargar Datos".
-   * Permite opcionalmente filtrar por canal.
-   */
-  @Get('PEPI/:usuarioId')
-  async iniciarDatos(
+  @Get('hexValues/:proyectoId/:usuarioId')
+  async getProyecto(
+    @Param('proyectoId') proyectoId: string,
     @Param('usuarioId') usuarioId: string,
-    @Query('canalId') canalIdStr?: string,
-  ): Promise<{ mensaje: string }> {
-    const canalId =
-      canalIdStr !== undefined ? parseInt(canalIdStr, 10) : undefined;
+  ) {
+    console.log('✅ Entró en getHexValues controlador');
 
-    console.log(
-      `📨 [Controller] Recibida petición para usuario ${usuarioId}, canalId: ${canalId}`,
+    const resultado = await this.appService.getProyectoInfo(
+      proyectoId,
+      usuarioId,
     );
 
-    // 👇 canalId es de tipo number | undefined
-    await this.appService.procesarYEmitirDatos(usuarioId, canalId);
-
-    console.log(
-      `✅ [Controller] Servicio procesó y emitió datos para ${usuarioId}`,
-    );
-
+    // Aquí también devolvemos un resumen útil en la respuesta HTTP
     return {
-      mensaje:
-        `Datos procesados y enviados para ${usuarioId}` +
-        (canalId !== undefined ? ` (canal ${canalId})` : ''),
+      status: 'ok',
+      datos: resultado.datos.slice(-10), // opcional: último bloque para debug
+      total: resultado.datos.length,
+      comentarios: resultado.comentarios,
     };
   }
 }

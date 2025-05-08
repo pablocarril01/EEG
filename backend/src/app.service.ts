@@ -22,10 +22,7 @@ export class AppService {
   async getProyectoInfo(
     proyectoId: string,
     usuarioId: string,
-    canalId?: number,
   ): Promise<{ datos: number[][]; comentarios: string[] }> {
-    console.log(`📡 Obteniendo datos de Redis en app.service`);
-
     try {
       const rawData = await this.redisProvider.getData(proyectoId, usuarioId);
       let comentarios = await this.redisProvider.getComentarios(
@@ -108,7 +105,7 @@ export class AppService {
       this.previousData = processedData.slice(-50);
 
       // Emitir los datos por WebSocket
-      console.log('👉 ProcessedData length:', processedData.length);
+      console.log('👉 ProcesedData length:', processedData.length);
       console.log('👉 Comentarios:', comentarios);
       this.datosGateway.enviarDatos(usuarioId, {
         datos: processedData,
@@ -120,25 +117,5 @@ export class AppService {
       console.error('❌ Error procesando los datos:', error);
       return { datos: [], comentarios: [] };
     }
-  }
-
-  /**
-   * ✅ NUEVO: Método para AppController o servicios automáticos.
-   * Reutiliza `getProyectoInfo(...)` y emite por WebSocket.
-   */
-  async procesarYEmitirDatos(
-    usuarioId: string,
-    canalId?: number,
-  ): Promise<void> {
-    const { datos, comentarios } = await this.getProyectoInfo(
-      'PEPI',
-      usuarioId,
-      canalId,
-    );
-    console.log(
-      `⚙️ [Service] procesarYEmitirDatos() para ${usuarioId}, canalId: ${canalId}`,
-    );
-
-    this.datosGateway.enviarDatos(usuarioId, { datos, comentarios });
   }
 }
