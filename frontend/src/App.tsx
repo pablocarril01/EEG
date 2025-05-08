@@ -1,15 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import ChartComponent from "./components/ChartComponent";
+import axios from "axios";
 import { TIEMPO_ACTUALIZACION } from "./config";
-import io from "socket.io-client";
 import "./estilos.css";
 
 type AppState = "INICIAL" | "MOSTRANDO_DATOS" | "MOSTRANDO_CEROS";
-
-// ✅ Conexión al WebSocket del backend
-const socket = io("http://localhost:3000", {
-  transports: ["websocket"],
-});
 
 const App: React.FC = () => {
   const [usuarioId, setUsuarioId] = useState("Pablo");
@@ -26,6 +21,7 @@ const App: React.FC = () => {
   const isDataDifferent = (a: number[][], b: number[][]) => {
     if (a.length !== b.length) return true;
     for (let i = 0; i < a.length; i++) {
+      if (!a[i] || !b[i]) return true;
       const aSlice = a[i].slice(-15);
       const bSlice = b[i].slice(-15);
       if (aSlice.length !== bSlice.length) return true;
@@ -36,62 +32,76 @@ const App: React.FC = () => {
     return false;
   };
 
-  const iniciarConDatos = () => {
-    console.log("✅ Enviando joinRoom con usuario:", usuarioId);
-    socket.emit("joinRoom", usuarioId);
+  const fetchFromBackend = async () => {
+    try {
+      const url = `http://localhost:3000/api/hexValues/PEPI/${usuarioId}`;
+      const fallback = `/api/hexValues/PEPI/${usuarioId}`;
+      const response = await axios.get(url).catch(() => axios.get(fallback));
 
-    // ✅ Activar backend para que procese y emita datos por WebSocket
-    fetch(`http://localhost:3000/api/hexValues/PEPI/${usuarioId}`)
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("📡 Backend procesó y respondió:", data);
-      })
-      .catch((err) => {
-        console.error("❌ Error al contactar con el backend:", err);
-      });
+      if (!response?.data?.datos || !Array.isArray(response.data.datos))
+        return null;
 
-    setMostrarSelector(false);
-    setEstado("MOSTRANDO_DATOS");
+      return {
+        datos: response.data.datos,
+        comentarios: Array.isArray(response.data.comentarios)
+          ? response.data.comentarios
+          : [],
+      };
+    } catch (error) {
+      console.error("❌ Error al obtener datos:", error);
+      return null;
+    }
   };
 
-  const manejarFinAnimacion = () => {
+  const iniciarConDatos = async () => {
+    const result = await fetchFromBackend();
+    if (result) {
+      setMostrarSelector(false);
+      setChartData(result.datos);
+      previousData.current = result.datos;
+      setComentarios(result.comentarios);
+      setEstado("MOSTRANDO_DATOS");
+    }
+  };
+
+  const manejarFinAnimacion = async () => {
     if (estado === "MOSTRANDO_DATOS") {
-      setEstado("MOSTRANDO_CEROS");
-      setCicloCeros((prev) => prev + 1);
+      const result = await fetchFromBackend();
+      if (result) {
+        if (isDataDifferent(result.datos, previousData.current)) {
+          setChartData(result.datos);
+          previousData.current = result.datos;
+          setComentarios(result.comentarios);
+        } else {
+          setEstado("MOSTRANDO_CEROS");
+          setCicloCeros((prev) => prev + 1);
+        }
+      }
     } else if (estado === "MOSTRANDO_CEROS") {
       setCicloCeros((prev) => prev + 1);
     }
   };
 
   useEffect(() => {
-    socket.on("connect", () => {
-      console.log("🔗 Conectado al WebSocket con ID:", socket.id);
-    });
+    let pollingInterval: NodeJS.Timeout | null = null;
 
-    socket.on(
-      "nuevoDato",
-      (payload: { datos: number[][]; comentarios: string[] }) => {
-        console.log("📥 Recibido desde backend:", payload);
-
-        if (!payload?.datos || !Array.isArray(payload.datos)) return;
-
-        if (isDataDifferent(payload.datos, previousData.current)) {
-          setChartData(payload.datos);
-          previousData.current = payload.datos;
-          setComentarios(payload.comentarios);
+    if (estado === "MOSTRANDO_CEROS") {
+      pollingInterval = setInterval(async () => {
+        const result = await fetchFromBackend();
+        if (result && isDataDifferent(result.datos, previousData.current)) {
+          clearInterval(pollingInterval!);
+          setChartData(result.datos);
+          previousData.current = result.datos;
+          setComentarios(result.comentarios);
           setEstado("MOSTRANDO_DATOS");
-        } else {
-          setEstado("MOSTRANDO_CEROS");
-          setCicloCeros((prev) => prev + 1);
         }
-      }
-    );
+      }, 1000);
+    }
 
     return () => {
-      socket.off("nuevoDato");
-      socket.off("connect");
+      if (pollingInterval) clearInterval(pollingInterval);
     };
-  }, []);
+  }, [estado]);
 
   const detener = () => {
     setEstado("INICIAL");
@@ -100,7 +110,7 @@ const App: React.FC = () => {
 
   return (
     <div className="app-container">
-      {mostrarSelector ? (
+      {mostrarSelector && (
         <div className="selector-container">
           <label className="selector-label">
             Usuario ID:
@@ -120,7 +130,9 @@ const App: React.FC = () => {
             Cargar Datos
           </button>
         </div>
-      ) : (
+      )}
+
+      {!mostrarSelector && (
         <>
           <div className="top-bar">
             <div className="paciente-label">Paciente: {usuarioId}</div>
