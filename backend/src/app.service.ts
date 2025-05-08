@@ -57,8 +57,7 @@ export class AppService {
         }
       });
 
-      if (!rawData || rawData.length === 0)
-        return { datos: [], comentarios };
+      if (!rawData || rawData.length === 0) return { datos: [], comentarios };
 
       console.log('📌 Datos crudos de Redis:', rawData);
 
@@ -91,7 +90,7 @@ export class AppService {
       processedData = filtroMedia(processedData);
 
       processedData = processedData.slice(-cantidadNuevos);
-      processedData = processedData.filter((_, index) => index % 25 === 0);
+      processedData = processedData.filter((_, index) => index % 5 === 0);
       processedData = processedData.map((fila) =>
         fila.map((valor) => Number(valor.toFixed(2))),
       );

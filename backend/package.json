@@ -23,6 +23,8 @@
     "@nestjs/common": "^11.0.10",
     "@nestjs/core": "^11.0.10",
     "@nestjs/platform-express": "^11.0.1",
+    "@nestjs/platform-socket.io": "^11.1.0",
+    "@nestjs/websockets": "^11.1.0",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "dsp.js": "^1.0.1",
