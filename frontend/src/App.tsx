@@ -3,6 +3,7 @@ import ChartComponent from "./components/ChartComponent";
 import axios from "axios";
 import { TIEMPO_ACTUALIZACION } from "./config";
 import "./estilos.css";
+import { socket } from "./socket";
 
 type AppState = "INICIAL" | "MOSTRANDO_DATOS" | "MOSTRANDO_CEROS";
 
@@ -33,24 +34,22 @@ const App: React.FC = () => {
   };
 
   const fetchFromBackend = async () => {
-    try {
-      const url = `http://localhost:3000/api/hexValues/PEPI/${usuarioId}`;
-      const fallback = `/api/hexValues/PEPI/${usuarioId}`;
-      const response = await axios.get(url).catch(() => axios.get(fallback));
+    return new Promise((resolve) => {
+      socket.emit("solicitarDatos", { proyectoId: "PEPI", usuarioId });
 
-      if (!response?.data?.datos || !Array.isArray(response.data.datos))
-        return null;
-
-      return {
-        datos: response.data.datos,
-        comentarios: Array.isArray(response.data.comentarios)
-          ? response.data.comentarios
-          : [],
-      };
-    } catch (error) {
-      console.error("❌ Error al obtener datos:", error);
-      return null;
-    }
+      socket.once("datosRecibidos", (response) => {
+        if (!response?.datos || !Array.isArray(response.datos)) {
+          resolve(null);
+        } else {
+          resolve({
+            datos: response.datos,
+            comentarios: Array.isArray(response.comentarios)
+              ? response.comentarios
+              : [],
+          });
+        }
+      });
+    });
   };
 
   const iniciarConDatos = async () => {
