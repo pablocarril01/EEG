@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import ChartComponent from "./components/ChartComponent";
-import axios from "axios";
 import { TIEMPO_ACTUALIZACION } from "./config";
 import "./estilos.css";
 import { socket } from "./socket";
