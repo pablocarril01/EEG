@@ -33,19 +33,26 @@ const App: React.FC = () => {
     return false;
   };
 
-  const fetchFromBackend = async () => {
+  type DatosResult = {
+    datos: number[][];
+    comentarios: string[];
+  } | null;
+
+  const fetchFromBackend = (): Promise<DatosResult> => {
     return new Promise((resolve) => {
       socket.emit("solicitarDatos", { proyectoId: "PEPI", usuarioId });
 
       socket.once("datosRecibidos", (response) => {
-        if (!response?.datos || !Array.isArray(response.datos)) {
+        if (
+          !response ||
+          !Array.isArray(response.datos) ||
+          !Array.isArray(response.comentarios)
+        ) {
           resolve(null);
         } else {
           resolve({
             datos: response.datos,
-            comentarios: Array.isArray(response.comentarios)
-              ? response.comentarios
-              : [],
+            comentarios: response.comentarios,
           });
         }
       });
