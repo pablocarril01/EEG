@@ -1,4 +1,7 @@
 import { io } from "socket.io-client";
-export const socket = io("http://193.146.34.10:3000", {
+
+const socket = io(process.env.URL_BACKEND || "http://localhost:3000", {
   transports: ["websocket"],
 });
+
+export { socket };

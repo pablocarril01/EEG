@@ -62,6 +62,7 @@ const App: React.FC = () => {
     const result = await fetchFromBackend();
     if (result) {
       setMostrarSelector(false);
+      console.log("Datos iniciales recibidos");
       setChartData(result.datos);
       previousData.current = result.datos;
       setComentarios(result.comentarios);
@@ -74,10 +75,12 @@ const App: React.FC = () => {
       const result = await fetchFromBackend();
       if (result) {
         if (isDataDifferent(result.datos, previousData.current)) {
+          console.log("Datos diferentes, actualizando...");
           setChartData(result.datos);
           previousData.current = result.datos;
           setComentarios(result.comentarios);
         } else {
+          console.log("Datos iguales, mostrando ceros...");
           setEstado("MOSTRANDO_CEROS");
           setCicloCeros((prev) => prev + 1);
         }
@@ -94,6 +97,7 @@ const App: React.FC = () => {
       pollingInterval = setInterval(async () => {
         const result = await fetchFromBackend();
         if (result && isDataDifferent(result.datos, previousData.current)) {
+          console.log("Datos diferentes, actualizando...");
           clearInterval(pollingInterval!);
           setChartData(result.datos);
           previousData.current = result.datos;
