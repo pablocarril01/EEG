@@ -4,7 +4,11 @@ import { TIEMPO_ACTUALIZACION } from "./config";
 import "./estilos.css";
 import { socket } from "./socket";
 
-type AppState = "INICIAL" | "MOSTRANDO_DATOS" | "MOSTRANDO_CEROS";
+type AppState =
+  | "INICIAL"
+  | "MOSTRANDO_DATOS"
+  | "MOSTRANDO_CEROS"
+  | "COMPROBANDO_SENSOR";
 
 const App: React.FC = () => {
   const [usuarioId, setUsuarioId] = useState("Pablo");
@@ -59,14 +63,29 @@ const App: React.FC = () => {
   };
 
   const iniciarConDatos = async () => {
+    setMostrarSelector(false);
+    setEstado("COMPROBANDO_SENSOR");
+
     const result = await fetchFromBackend();
     if (result) {
-      setMostrarSelector(false);
-      console.log("Datos iniciales recibidos");
-      setChartData(result.datos);
       previousData.current = result.datos;
       setComentarios(result.comentarios);
-      setEstado("MOSTRANDO_DATOS");
+
+      setTimeout(async () => {
+        const comprobacion = await fetchFromBackend();
+        if (comprobacion) {
+          if (isDataDifferent(comprobacion.datos, previousData.current)) {
+            setChartData(comprobacion.datos);
+            previousData.current = comprobacion.datos;
+            setComentarios(comprobacion.comentarios);
+            setEstado("MOSTRANDO_DATOS");
+          } else {
+            setChartData(comprobacion.datos);
+            setEstado("MOSTRANDO_CEROS");
+            setCicloCeros((prev) => prev + 1);
+          }
+        }
+      }, 1500);
     }
   };
 
@@ -117,6 +136,19 @@ const App: React.FC = () => {
     setMostrarSelector(true);
   };
 
+  const obtenerClaseEstado = () => {
+    switch (estado) {
+      case "MOSTRANDO_DATOS":
+        return "verde";
+      case "MOSTRANDO_CEROS":
+        return "rojo";
+      case "COMPROBANDO_SENSOR":
+        return "naranja";
+      default:
+        return "gris";
+    }
+  };
+
   return (
     <div className="app-container">
       {mostrarSelector && (
@@ -145,11 +177,7 @@ const App: React.FC = () => {
         <>
           <div className="top-bar">
             <div className="paciente-label">Paciente: {usuarioId}</div>
-            <div
-              className={`estado-circulo ${
-                estado === "MOSTRANDO_DATOS" ? "verde" : "gris"
-              }`}
-            ></div>
+            <div className={`estado-circulo ${obtenerClaseEstado()}`}></div>
           </div>
 
           <div className="buttons-container">
@@ -176,37 +204,52 @@ const App: React.FC = () => {
               >
                 Sensor desconectado
               </h2>
+            ) : estado === "COMPROBANDO_SENSOR" ? (
+              <h2
+                style={{
+                  textAlign: "center",
+                  color: "orange",
+                  fontSize: "1.5rem",
+                  margin: 0,
+                }}
+              >
+                Comprobando conexión de sensor...
+              </h2>
             ) : (
               <div style={{ height: "1.5rem" }}></div>
             )}
           </div>
 
-          <div className="chart-container">
-            <ChartComponent
-              data={chartData}
-              isAnimating={true}
-              usuarioId={usuarioId}
-              onAnimationEnd={manejarFinAnimacion}
-              shouldZero={estado === "MOSTRANDO_CEROS"}
-              animationDuration={TIEMPO_ACTUALIZACION}
-              cicloCeros={cicloCeros}
-            />
-          </div>
+          {(estado === "MOSTRANDO_DATOS" || estado === "MOSTRANDO_CEROS") && (
+            <div className="chart-container">
+              <ChartComponent
+                data={chartData}
+                isAnimating={true}
+                usuarioId={usuarioId}
+                onAnimationEnd={manejarFinAnimacion}
+                shouldZero={estado === "MOSTRANDO_CEROS"}
+                animationDuration={TIEMPO_ACTUALIZACION}
+                cicloCeros={cicloCeros}
+              />
+            </div>
+          )}
 
-          <div className="comment-section">
-            <h2>Comentarios</h2>
-            {comentarios.length > 0 ? (
-              <ul className="comment-list">
-                {comentarios.map((comentario, index) => (
-                  <li key={index} className="comment-item">
-                    {comentario}
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p>No hay comentarios disponibles.</p>
-            )}
-          </div>
+          {(estado === "MOSTRANDO_DATOS" || estado === "MOSTRANDO_CEROS") && (
+            <div className="comment-section">
+              <h2>Comentarios</h2>
+              {comentarios.length > 0 ? (
+                <ul className="comment-list">
+                  {comentarios.map((comentario, index) => (
+                    <li key={index} className="comment-item">
+                      {comentario}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No hay comentarios disponibles.</p>
+              )}
+            </div>
+          )}
         </>
       )}
     </div>
