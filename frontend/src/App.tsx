@@ -218,7 +218,7 @@ const App: React.FC = () => {
             <div>
               {estado === "MOSTRANDO_CEROS" && (
                 <h2 style={{ color: "red", fontSize: "1.5rem", margin: 0 }}>
-                  Sensor desconectado
+                  Dispositivo desconectado
                 </h2>
               )}
               {estado === "COMPROBANDO_SENSOR" && (
