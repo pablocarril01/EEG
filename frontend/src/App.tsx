@@ -158,6 +158,29 @@ const App: React.FC = () => {
             </button>
           </div>
 
+          <div
+            className="sensor-status"
+            style={{
+              height: "2.5rem",
+              marginTop: "1.5rem",
+            }}
+          >
+            {estado === "MOSTRANDO_CEROS" ? (
+              <h2
+                style={{
+                  textAlign: "center",
+                  color: "red",
+                  fontSize: "1.5rem",
+                  margin: 0,
+                }}
+              >
+                Sensor desconectado
+              </h2>
+            ) : (
+              <div style={{ height: "1.5rem" }}></div>
+            )}
+          </div>
+
           <div className="chart-container">
             <ChartComponent
               data={chartData}
