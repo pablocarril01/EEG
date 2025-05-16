@@ -161,3 +161,14 @@ body {
 .estado-circulo.naranja {
   background-color: #ff8902;
 }
+
+.logo-cima {
+  width: 720px;
+}
+
+.selector-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 1rem;
+}

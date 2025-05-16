@@ -153,71 +153,81 @@ const App: React.FC = () => {
     <div className="app-container">
       {mostrarSelector && (
         <div className="selector-container">
-          <label className="selector-label">
-            Usuario ID:
-            <select
-              value={usuarioId}
-              onChange={(e) => setUsuarioId(e.target.value)}
-              className="selector-dropdown"
-            >
-              <option value="Pablo">Pablo</option>
-              <option value="Ernesto">Ernesto</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="4">4</option>
-            </select>
-          </label>
-          <button className="btn btn-start" onClick={iniciarConDatos}>
-            Cargar Datos
-          </button>
+          <img src="/PEPI.png" alt="Logo PEPI" className="logo-cima" />
+          <div className="selector-row">
+            <label className="selector-label">
+              Usuario ID:
+              <select
+                value={usuarioId}
+                onChange={(e) => setUsuarioId(e.target.value)}
+                className="selector-dropdown"
+              >
+                <option value="Pablo">Pablo</option>
+                <option value="Ernesto">Ernesto</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="4">4</option>
+              </select>
+            </label>
+            <button className="btn btn-start" onClick={iniciarConDatos}>
+              Cargar Datos
+            </button>
+          </div>
         </div>
       )}
 
       {!mostrarSelector && (
         <>
-          <div className="top-bar">
-            <div className="paciente-label">Paciente: {usuarioId}</div>
-            <div className={`estado-circulo ${obtenerClaseEstado()}`}></div>
-          </div>
-
-          <div className="buttons-container">
-            <button className="btn btn-stop" onClick={detener}>
-              Volver
-            </button>
-          </div>
-
           <div
-            className="sensor-status"
+            className="estado-layout"
             style={{
-              height: "2.5rem",
-              marginTop: "1.5rem",
+              width: "100%",
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gridTemplateRows: "auto auto",
+              alignItems: "center",
+              textAlign: "center",
+              gap: "1rem",
+              marginBottom: "1.5rem",
             }}
           >
-            {estado === "MOSTRANDO_CEROS" ? (
-              <h2
-                style={{
-                  textAlign: "center",
-                  color: "red",
-                  fontSize: "1.5rem",
-                  margin: 0,
-                }}
-              >
-                Sensor desconectado
-              </h2>
-            ) : estado === "COMPROBANDO_SENSOR" ? (
-              <h2
-                style={{
-                  textAlign: "center",
-                  color: "orange",
-                  fontSize: "1.5rem",
-                  margin: 0,
-                }}
-              >
-                Comprobando conexión de sensor...
-              </h2>
-            ) : (
-              <div style={{ height: "1.5rem" }}></div>
-            )}
+            {/* Fila 1 */}
+            <div
+              style={{
+                justifySelf: "start",
+                fontSize: "2.2rem",
+                fontWeight: "bold",
+              }}
+            >
+              Paciente: {usuarioId}
+            </div>
+            <button
+              className="btn btn-stop"
+              onClick={detener}
+              style={{ justifySelf: "center" }}
+            >
+              Volver
+            </button>
+            <div
+              className={`estado-circulo ${obtenerClaseEstado()}`}
+              style={{ justifySelf: "end", marginRight: "2rem" }}
+            ></div>
+
+            {/* Fila 2 */}
+            <div></div>
+            <div>
+              {estado === "MOSTRANDO_CEROS" && (
+                <h2 style={{ color: "red", fontSize: "1.5rem", margin: 0 }}>
+                  Sensor desconectado
+                </h2>
+              )}
+              {estado === "COMPROBANDO_SENSOR" && (
+                <h2 style={{ color: "orange", fontSize: "1.5rem", margin: 0 }}>
+                  Comprobando conexión de sensor...
+                </h2>
+              )}
+            </div>
+            <div></div>
           </div>
 
           {(estado === "MOSTRANDO_DATOS" || estado === "MOSTRANDO_CEROS") && (
