@@ -85,7 +85,7 @@ body {
 
 .chart-canvas {
   width: 100%;
-  height: 1200px; /* ⬅️ Ajusta aquí la altura visible real del canvas */
+  height: 800px; /* ⬅️ Ajusta aquí la altura visible real del canvas */
   display: block;
 }
 
@@ -144,22 +144,7 @@ body {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-}
-
-.estado-circulo.verde {
-  background-color: #4caf50;
-}
-
-.estado-circulo.gris {
-  background-color: #999999;
-}
-
-.estado-circulo.rojo {
-  background-color: #e00909;
-}
-
-.estado-circulo.naranja {
-  background-color: #ff8902;
+  background-color: var(--color, gray);
 }
 
 .logo-cima {
@@ -171,4 +156,11 @@ body {
   flex-direction: row;
   align-items: center;
   gap: 1rem;
+}
+
+:root {
+  --color-desconectado: #f14949ef;
+  --color-comprobando: #ffa500;
+  --color-datos: #54e08a;
+  --color-default: #999999;
 }

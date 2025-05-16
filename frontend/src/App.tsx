@@ -8,7 +8,8 @@ type AppState =
   | "INICIAL"
   | "MOSTRANDO_DATOS"
   | "MOSTRANDO_CEROS"
-  | "COMPROBANDO_SENSOR";
+  | "COMPROBANDO_SENSOR"
+  | "";
 
 const App: React.FC = () => {
   const [usuarioId, setUsuarioId] = useState("Pablo");
@@ -136,18 +137,28 @@ const App: React.FC = () => {
     setMostrarSelector(true);
   };
 
-  const obtenerClaseEstado = () => {
+  const getEstadoVisual = (estado: AppState) => {
     switch (estado) {
-      case "MOSTRANDO_DATOS":
-        return "verde";
       case "MOSTRANDO_CEROS":
-        return "rojo";
+        return {
+          mensaje: "Dispositivo desconectado",
+          color: "var(--color-desconectado)",
+        };
       case "COMPROBANDO_SENSOR":
-        return "naranja";
+        return {
+          mensaje: "Comprobando conexión con sensor...",
+          color: "var(--color-comprobando)",
+        };
+      case "MOSTRANDO_DATOS":
+        return {
+          mensaje: "Representando señal...",
+          color: "var(--color-datos)",
+        };
       default:
-        return "gris";
+        return { mensaje: "", color: "var(--color-default)" };
     }
   };
+  const estadoVisual = getEstadoVisual(estado);
 
   return (
     <div className="app-container">
@@ -209,26 +220,33 @@ const App: React.FC = () => {
               Volver
             </button>
             <div
-              className={`estado-circulo ${obtenerClaseEstado()}`}
-              style={{ justifySelf: "end", marginRight: "2rem" }}
-            ></div>
-
-            {/* Fila 2 */}
-            <div></div>
-            <div>
-              {estado === "MOSTRANDO_CEROS" && (
-                <h2 style={{ color: "red", fontSize: "1.5rem", margin: 0 }}>
-                  Dispositivo desconectado
-                </h2>
-              )}
-              {estado === "COMPROBANDO_SENSOR" && (
-                <h2 style={{ color: "orange", fontSize: "1.5rem", margin: 0 }}>
-                  Comprobando conexión de sensor...
-                </h2>
-              )}
-            </div>
-            <div></div>
+              className="estado-circulo"
+              style={
+                {
+                  justifySelf: "end",
+                  marginRight: "2rem",
+                  ["--color"]: estadoVisual.color,
+                } as React.CSSProperties as any
+              }
+            />
           </div>
+
+          {/* Fila 2 */}
+          <div></div>
+          <div>
+            {estado && (
+              <h2
+                style={{
+                  color: estadoVisual.color,
+                  fontSize: "1.5rem",
+                  margin: 0,
+                }}
+              >
+                {estadoVisual.mensaje}
+              </h2>
+            )}
+          </div>
+          <div></div>
 
           {(estado === "MOSTRANDO_DATOS" || estado === "MOSTRANDO_CEROS") && (
             <div className="chart-container">
