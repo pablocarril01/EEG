@@ -1,10 +1,18 @@
 import { io } from "socket.io-client";
 
-const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-const host = window.location.hostname;
-const port = 3000; // o el puerto real del backend
+const isLocal =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1";
 
-export const socket = io(`${protocol}://${host}:${port}`, {
-  transports: ["websocket"],
+// Local con Docker (conexión directa a backend en puerto 3000)
+const localSocketURL = "http://localhost:3000";
+
+// Producción: usar misma IP o dominio, pero WSS y puerto 443 (por Nginx)
+const productionSocketURL = undefined; // conecta automáticamente con mismo origen
+
+const socket = io(isLocal ? localSocketURL : productionSocketURL, {
   path: "/socket.io",
+  transports: ["websocket"],
 });
+
+export { socket };

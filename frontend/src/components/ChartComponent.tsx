@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 
 interface ChartComponentProps {
   data: number[][];
@@ -22,7 +22,6 @@ const colors = [
   "#B0E0E6",
 ];
 
-// Orden correcto si los canales llegan desordenados del backend
 const indexMap = [7, 0, 6, 1, 5, 2, 4, 3];
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -35,16 +34,33 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   cicloCeros = 0,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const displayedDataRef = useRef<number[][]>([]);
   const startTimeRef = useRef<number>(0);
+  const [canvasWidth, setCanvasWidth] = useState(1200);
 
-  const width = 1200;
   const height = 1200;
-
   const numChannels = channelNames.length;
   const channelHeight = height / numChannels;
   const yMin = -2000;
   const yMax = 2000;
+
+  useEffect(() => {
+    const resizeObserver = new ResizeObserver(() => {
+      if (containerRef.current) {
+        const newWidth = containerRef.current.offsetWidth;
+        setCanvasWidth(newWidth);
+      }
+    });
+
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
 
   useEffect(() => {
     displayedDataRef.current = [];
@@ -85,7 +101,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         displayedDataRef.current[i] = finalData[i];
       }
 
-      ctx.clearRect(0, 0, width, height);
+      ctx.clearRect(0, 0, canvasWidth, height);
 
       for (let c = 0; c < numChannels; c++) {
         ctx.beginPath();
@@ -106,7 +122,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
             continue;
           }
 
-          const x = (i / totalPoints) * width;
+          const x = (i / totalPoints) * canvasWidth;
           const y = midY - val * scaleY;
 
           if (!hasMoved) {
@@ -120,7 +136,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
         ctx.stroke();
       }
 
-      const cursorX = (currentCursor / totalPoints) * width;
+      const cursorX = (currentCursor / totalPoints) * canvasWidth;
       ctx.beginPath();
       ctx.moveTo(cursorX, 0);
       ctx.lineTo(cursorX, height);
@@ -144,16 +160,45 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     return () => {
       cancelAnimationFrame(animationFrameId);
     };
-  }, [isAnimating, data, shouldZero, animationDuration, cicloCeros, usuarioId]);
+  }, [
+    isAnimating,
+    data,
+    shouldZero,
+    animationDuration,
+    cicloCeros,
+    usuarioId,
+    canvasWidth,
+  ]);
 
   return (
-    <div className="chart-container">
-      <canvas
-        ref={canvasRef}
-        width={1200}
-        height={1200}
-        className="chart-canvas"
-      />
+    <div style={{ display: "flex", width: "100%" }}>
+      <div style={{ width: "fit-content", paddingTop: "0px" }}>
+        {indexMap.map((idx, i) => (
+          <div
+            key={i}
+            style={{
+              height: `${channelHeight}px`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              color: "white",
+              fontSize: "18px",
+              whiteSpace: "nowrap",
+              paddingRight: "0px",
+            }}
+          >
+            {channelNames[idx]}
+          </div>
+        ))}
+      </div>
+      <div style={{ flexGrow: 1 }} ref={containerRef}>
+        <canvas
+          ref={canvasRef}
+          width={canvasWidth}
+          height={height}
+          style={{ width: "100%", height: `${height}px` }}
+        />
+      </div>
     </div>
   );
 };
