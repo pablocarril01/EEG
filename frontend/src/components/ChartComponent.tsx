@@ -12,16 +12,17 @@ interface ChartComponentProps {
 
 const channelNames = ["FP1", "FP2", "T3", "T4", "O1", "O2", "C3", "C4"];
 const colors = [
-  "#66C2FF",
-  "#7FFF7F",
-  "#FFD700",
-  "#FF99CC",
-  "#FFA07A",
-  "#DDA0DD",
-  "#40E0D0",
-  "#B0E0E6",
+  "#00FF00",
+  "#00FF00",
+  "#FFFF00",
+  "#FFFF00",
+  "#6699FF",
+  "#6699FF",
+  "#FF0000",
+  "#FF0000",
 ];
 
+// Este es el orden de reordenación interna de los datos
 const indexMap = [7, 0, 6, 1, 5, 2, 4, 3];
 
 const ChartComponent: React.FC<ChartComponentProps> = ({
@@ -74,6 +75,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
 
     let animationFrameId: number;
 
+    // Reordena los datos para que cada canal visual se corresponda con el orden deseado
     const remappedData = data.map((entry) =>
       indexMap.map((idx) => entry?.[idx] ?? 0)
     );
@@ -173,7 +175,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   return (
     <div style={{ display: "flex", width: "100%" }}>
       <div style={{ width: "fit-content", paddingTop: "0px" }}>
-        {indexMap.map((idx, i) => (
+        {channelNames.map((name, i) => (
           <div
             key={i}
             style={{
@@ -182,12 +184,12 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
               alignItems: "center",
               justifyContent: "flex-start",
               color: "white",
-              fontSize: "18px",
+              fontSize: "12px",
               whiteSpace: "nowrap",
               paddingRight: "0px",
             }}
           >
-            {channelNames[idx]}
+            {name}
           </div>
         ))}
       </div>

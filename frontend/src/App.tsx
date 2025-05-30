@@ -141,21 +141,18 @@ const App: React.FC = () => {
     switch (estado) {
       case "MOSTRANDO_CEROS":
         return {
-          mensaje: "Dispositivo desconectado",
           color: "var(--color-desconectado)",
         };
       case "COMPROBANDO_SENSOR":
         return {
-          mensaje: "Comprobando conexión con sensor...",
           color: "var(--color-comprobando)",
         };
       case "MOSTRANDO_DATOS":
         return {
-          mensaje: "Representando señal...",
           color: "var(--color-datos)",
         };
       default:
-        return { mensaje: "", color: "var(--color-default)" };
+        return { color: "var(--color-default)" };
     }
   };
   const estadoVisual = getEstadoVisual(estado);
@@ -206,7 +203,7 @@ const App: React.FC = () => {
             <div
               style={{
                 justifySelf: "start",
-                fontSize: "2.2rem",
+                fontSize: "1.2rem",
                 fontWeight: "bold",
               }}
             >
@@ -237,12 +234,14 @@ const App: React.FC = () => {
             {estado && (
               <h2
                 style={{
-                  color: estadoVisual.color,
+                  color: "white",
                   fontSize: "1.5rem",
                   margin: 0,
                 }}
               >
-                {estadoVisual.mensaje}
+                PEPI v1.0 de 8 canales
+                <br />
+                10 segundos / barrido, 500 Hz
               </h2>
             )}
           </div>
