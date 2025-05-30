@@ -136,7 +136,7 @@ const App: React.FC = () => {
     setEstado("INICIAL");
     setMostrarSelector(true);
   };
-
+  /*
   const getEstadoVisual = (estado: AppState) => {
     switch (estado) {
       case "MOSTRANDO_CEROS":
@@ -156,6 +156,7 @@ const App: React.FC = () => {
     }
   };
   const estadoVisual = getEstadoVisual(estado);
+  */
 
   return (
     <div className="app-container">
@@ -195,57 +196,43 @@ const App: React.FC = () => {
               gridTemplateRows: "auto auto",
               alignItems: "center",
               textAlign: "center",
-              gap: "1rem",
-              marginBottom: "1.5rem",
+              marginBottom: "0rem",
             }}
           >
-            {/* Fila 1 */}
             <div
               style={{
                 justifySelf: "start",
-                fontSize: "1.2rem",
-                fontWeight: "bold",
+                fontSize: "0.88rem",
+                fontWeight: "normal",
               }}
             >
               Paciente: {usuarioId}
             </div>
+            <div>
+              {estado && (
+                <p
+                  style={{
+                    color: "white",
+                    fontSize: "0.88rem",
+                    margin: 0,
+                  }}
+                >
+                  PEPI v1.0 de 8 canales. 10 segundos / barrido, 500 Hz
+                </p>
+              )}
+            </div>
             <button
               className="btn btn-stop"
               onClick={detener}
-              style={{ justifySelf: "center" }}
+              style={{
+                justifySelf: "end",
+                marginRight: "2.2rem",
+                width: "auto",
+              }}
             >
               Volver
             </button>
-            <div
-              className="estado-circulo"
-              style={
-                {
-                  justifySelf: "end",
-                  marginRight: "2rem",
-                  ["--color"]: estadoVisual.color,
-                } as React.CSSProperties as any
-              }
-            />
           </div>
-
-          {/* Fila 2 */}
-          <div></div>
-          <div>
-            {estado && (
-              <h2
-                style={{
-                  color: "white",
-                  fontSize: "1.5rem",
-                  margin: 0,
-                }}
-              >
-                PEPI v1.0 de 8 canales
-                <br />
-                10 segundos / barrido, 500 Hz
-              </h2>
-            )}
-          </div>
-          <div></div>
 
           {(estado === "MOSTRANDO_DATOS" || estado === "MOSTRANDO_CEROS") && (
             <div className="chart-container">
