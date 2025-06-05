@@ -1,28 +1,75 @@
+version: "3.8"
+
 services:
+  # ──────────────────────────────────────────────────────────
+  # Servicio Redis
+  # ──────────────────────────────────────────────────────────
   redis:
     image: redis:alpine
     container_name: redis
     ports:
       - "6379:6379"
+    # Cargamos las mismas variables desde project-root/.env
+    env_file:
+      - .env
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
     volumes:
       - redis_data:/data
 
+  # ──────────────────────────────────────────────────────────
+  # Servicio PostgreSQL / TimescaleDB
+  # ──────────────────────────────────────────────────────────
+  postgres:
+    image: timescale/timescaledb:latest-pg13
+    container_name: postgres
+    # Cargamos las mismas variables desde project-root/.env
+    env_file:
+      - .env
+    environment:
+      - POSTGRES_USER=${DB_USERNAME}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+      - POSTGRES_DB=${DB_DATABASE}
+    ports:
+      - "${DB_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  # ──────────────────────────────────────────────────────────
+  # Servicio Backend (NestJS)
+  # ──────────────────────────────────────────────────────────
   backend:
     build: ./backend
     container_name: backend
     ports:
       - "3000:3000"
+    # Leemos el mismo .env para todas las variables necesarias
+    env_file:
+      - .env
     environment:
+      # Variables de Redis que ya tenías
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
       - REDIS_DB=${REDIS_DB}
       - REDIS_PASSWORD=${REDIS_PASSWORD}
+
+      # Variables de PostgreSQL/TimescaleDB nuevas
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USERNAME=${DB_USERNAME}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_DATABASE=${DB_DATABASE}
     depends_on:
       - redis
+      - postgres
+    volumes:
+      - ./backend:/app
+    command: ["npm", "run", "start:dev"]
 
+  # ──────────────────────────────────────────────────────────
+  # Servicio Frontend (React)
+  # ──────────────────────────────────────────────────────────
   frontend:
     build:
       context: ./frontend
@@ -30,6 +77,9 @@ services:
     container_name: frontend
     ports:
       - "3001:3000"
+    # También lee el mismo .env (si en el futuro necesitas más vars)
+    env_file:
+      - .env
     environment:
       - VITE_API_URL=http://backend:3000
     depends_on:
@@ -39,3 +89,4 @@ services:
 
 volumes:
   redis_data:
+  postgres_data:

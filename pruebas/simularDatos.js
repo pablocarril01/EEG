@@ -1,3 +1,5 @@
+// simularDatos.js
+
 import { createClient } from "redis";
 import dotenv from "dotenv";
 
@@ -8,10 +10,10 @@ dotenv.config();
 const client = createClient({
   socket: {
     host: process.env.REDIS_HOST,
-    port: process.env.REDIS_PORT,
+    port: Number(process.env.REDIS_PORT),
   },
-  password: process.env.REDIS_PASSWORD,
-  database: process.env.REDIS_DB,
+  password: process.env.REDIS_PASSWORD || undefined,
+  database: Number(process.env.REDIS_DB) || 0,
 });
 
 client.on("error", (err) => {
@@ -65,9 +67,18 @@ client.on("error", (err) => {
       for (let i = 0; i < 10; i++) {
         const paquete = generarPaquete();
         try {
+          // 1) Agregar a la lista antigua
           await client.rPush("proyecto:PEPI:Pablo:datos", paquete);
           console.log(
-            `✅ Paquete agregado a la lista: ${paquete.substring(0, 50)}...`
+            `✅ Paquete agregado a la LISTA: ${paquete.substring(0, 50)}...`
+          );
+
+          // 2) Agregar también al stream nuevo
+          await client.xAdd("proyecto:PEPI:Pablo:datos_stream", "*", {
+            data: paquete,
+          });
+          console.log(
+            `✅ Paquete agregado al STREAM: ${paquete.substring(0, 50)}...`
           );
         } catch (err) {
           console.error("❌ Error al enviar a Redis:", err);
