@@ -5,23 +5,38 @@ services:
     ports:
       - "6379:6379"
     environment:
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_DB=${REDIS_DB}
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
+
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    container_name: postgres
+    env_file: .env
+    environment:
+      - POSTGRES_USER=${PG_USER}
+      - POSTGRES_PASSWORD=${PG_PASSWORD}
+      - POSTGRES_DB=${PG_DATABASE}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
 
   backend:
     build: ./backend
     container_name: backend
     ports:
       - "3000:3000"
-    environment:
-      - REDIS_HOST=${REDIS_HOST}
-      - REDIS_PORT=${REDIS_PORT}
-      - REDIS_DB=${REDIS_DB}
-      - REDIS_PASSWORD=${REDIS_PASSWORD}
+    env_file: .env
     depends_on:
       - redis
+      - postgres
 
   frontend:
     build:
@@ -39,3 +54,4 @@ services:
 
 volumes:
   redis_data:
+  pg_data:

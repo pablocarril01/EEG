@@ -12,3 +12,6 @@ docker stop $(docker ps -q)
 docker ps
 
 node generateData
+
+No LSB modules are available.
+noble
