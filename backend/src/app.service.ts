@@ -11,10 +11,54 @@ import {
 
 @Injectable()
 export class AppService {
+  // Para mantener el historial de los últimos 50 puntos en la UI
   private previousData: number[][] = [];
 
   constructor(private readonly redisProvider: RedisProvider) {}
 
+  /**
+   * Procesa un string crudo de Redis (hexadecimal con marcadores i/f,
+   * grupos de 8 valores separados por comas y punto y coma)
+   * y devuelve el bloque completo filtrado, listo para persistir en PostgreSQL.
+   */
+  processRedisStringPG(entry: string): number[][] {
+    // 1) Eliminar espacios y marcadores de inicio/fin ('i' y 'f')
+    entry = entry.replace(/\s/g, '').replace(/^i|f$/g, '');
+    // 2) Dividir por los delimitadores de secuencia 'fi' o 'if'
+    const sequences = entry.split(/fi|if/);
+
+    // 3) Extraer cada grupo de 8 valores hexadecimales y convertirlos a decimal
+    const rawValues: number[][] = [];
+    sequences.forEach((seq) => {
+      const groups = seq.split(';');
+      groups.forEach((group) => {
+        const hexValues = group.split(',').filter((v) => v.length > 0);
+        if (hexValues.length === 8) {
+          rawValues.push(hexValues.map((val) => parseInt(val, 16)));
+        }
+      });
+    });
+
+    // 4) Aplicar filtros secuenciales
+    let processed = restar32768(rawValues).filter((f) => f.length === 8);
+    processed = filtroNotch(processed);
+    processed = filtroPasoAlto(processed);
+    processed = filtroPasoBajo(processed);
+    processed = filtroMediana(processed);
+    processed = filtroMedia(processed);
+
+    // 5) Extraer solo las muestras nuevas (mismo número que rawValues)
+    const count = rawValues.length;
+    const processedDataPG = processed.slice(-count);
+
+    return processedDataPG;
+  }
+
+  /**
+   * Método que utiliza el frontend para obtener datos y comentarios.
+   * Reutiliza processRedisStringPG para el bloque completo,
+   * decima y redondea los datos para la UI.
+   */
   async getProyectoInfo(
     proyectoId: string,
     usuarioId: string,
@@ -26,17 +70,16 @@ export class AppService {
         usuarioId,
       );
 
+      // Formatear comentarios con fecha legible
       comentarios = comentarios.map((item) => {
-        const itemSinAmpersand = item.replace(/&/g, '');
-        const partes = itemSinAmpersand.split('$');
-
-        if (partes.length === 2) {
-          const fechaUnix = parseInt(partes[0], 10);
-          const mensaje = partes[1];
-
-          if (!isNaN(fechaUnix)) {
-            const fecha = new Date(fechaUnix * 1000);
-            const fechaLegible = fecha
+        const clean = item.replace(/&/g, '');
+        const parts = clean.split('$');
+        if (parts.length === 2) {
+          const tsUnix = parseInt(parts[0], 10);
+          const mensaje = parts[1];
+          if (!isNaN(tsUnix)) {
+            const fecha = new Date(tsUnix * 1000);
+            const legible = fecha
               .toLocaleString('es-ES', {
                 timeZone: 'Europe/Madrid',
                 day: '2-digit',
@@ -47,57 +90,31 @@ export class AppService {
                 hour12: false,
               })
               .replace(',', '');
-
-            return `${fechaLegible}: ${mensaje}`;
-          } else {
-            return `Error con la fecha en: ${item}`;
+            return `${legible}: ${mensaje}`;
           }
-        } else {
-          return `Formato incorrecto en: ${item}`;
         }
+        return `Formato incorrecto en: ${item}`;
       });
 
-      if (!rawData || rawData.length === 0) return { datos: [], comentarios };
+      if (!rawData || rawData.length === 0) {
+        return { datos: [], comentarios };
+      }
 
-      console.log('📌 Datos crudos de Redis:', rawData);
+      // 6) Procesar cada string raw y concatenar todos los bloques PG
+      const allBlocksPG = rawData.flatMap((entry) =>
+        this.processRedisStringPG(entry),
+      );
 
-      let newData: number[][] = [];
-
-      rawData.forEach((entry) => {
-        entry = entry.replace(/\s/g, '').replace(/^i|f$/g, '');
-        const sequences = entry.split(/fi|if/);
-
-        sequences.forEach((seq) => {
-          const groups = seq.split(';');
-          groups.forEach((group) => {
-            const hexValues = group.split(',').filter((v) => v.length > 0);
-            if (hexValues.length === 8) {
-              const decimalValues = hexValues.map((val) => parseInt(val, 16));
-              newData.push(decimalValues);
-            }
-          });
-        });
-      });
-
-      const cantidadNuevos = newData.length;
-
-      let processedData = restar32768(newData).filter((f) => f.length === 8);
-
-      processedData = filtroNotch(processedData);
-      processedData = filtroPasoAlto(processedData);
-      processedData = filtroPasoBajo(processedData);
-      processedData = filtroMediana(processedData);
-      processedData = filtroMedia(processedData);
-
-      processedData = processedData.slice(-cantidadNuevos);
-      processedData = processedData.filter((_, index) => index % 5 === 0);
-      processedData = processedData.map((fila) =>
+      // 7) Decimar (cada 5º muestra) y redondear para la UI
+      let datosParaUI = allBlocksPG.filter((_, idx) => idx % 5 === 0);
+      datosParaUI = datosParaUI.map((fila) =>
         fila.map((valor) => Number(valor.toFixed(2))),
       );
 
-      this.previousData = processedData.slice(-50);
+      // 8) Guardar últimos 50 para el historial en la UI
+      this.previousData = datosParaUI.slice(-50);
 
-      return { datos: processedData, comentarios };
+      return { datos: datosParaUI, comentarios };
     } catch (error) {
       console.error('❌ Error procesando los datos:', error);
       return { datos: [], comentarios: [] };
