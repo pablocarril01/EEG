@@ -1,12 +1,12 @@
+// frontend/src/socket.ts
 import { io } from "socket.io-client";
 
-const isLocal =
-  window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1";
-const localSocketURL = "http://localhost:3000"; // :contentReference[oaicite:2]{index=2}
-const productionSocketURL = import.meta.env.VITE_SOCKET_URL as string;
+// Leer la URL de WebSocket desde variables de entorno de Vite
+const socketUrl = import.meta.env.VITE_SOCKET_URL as string;
 
-export const socket = io(isLocal ? localSocketURL : productionSocketURL, {
-  path: "/socket.io",
-  transports: ["websocket"],
+// Inicializar el socket; forzamos ws y deshabilitamos la verificación de certificado para entornos sin proxy SSL
+export const socket = io(socketUrl, {
+  transports: ["websocket"], // Solo websocket, sin polling
+  secure: false, // Desactiva wss en entornos no TLS
+  rejectUnauthorized: false, // Acepta certificados auto-firmados si hubiera
 });
