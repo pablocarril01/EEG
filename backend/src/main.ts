@@ -13,7 +13,7 @@ async function bootstrap() {
   });
   await app.listen(3000);
   app.enableCors({
-    origin: 'http://193.146.34.10',
+    origin: ['http://localhost:3001', 'http://193.146.34.10'],
   });
 }
 

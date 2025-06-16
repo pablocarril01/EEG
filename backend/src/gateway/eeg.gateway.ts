@@ -9,7 +9,11 @@ import { Server, Socket } from 'socket.io';
 import { AppService } from '../app.service';
 
 @WebSocketGateway({
-  cors: { origin: 'http://193.146.34.10' },
+  cors: {
+    origin: ['http://localhost:3001', 'http://193.146.34.10'],
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
 })
 export class EegGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
