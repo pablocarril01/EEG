@@ -23,7 +23,7 @@ export class AppService {
    */
   processRedisStringPG(entry: string): number[][] {
     // 1) Eliminar espacios y marcadores de inicio/fin ('i' y 'f')
-    entry = entry.replace(/\s/g, '').replace(/^i|f$/g, '');
+    entry = entry.replace(/\s/g, '').replace(/^[if]|[if]$/g, '');
     // 2) Dividir por los delimitadores de secuencia 'fi' o 'if'
     const sequences = entry.split(/fi|if/);
 
