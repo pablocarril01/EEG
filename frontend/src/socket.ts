@@ -8,5 +8,6 @@ const socketUrl = import.meta.env.VITE_SOCKET_URL as string;
 export const socket = io(socketUrl, {
   transports: ["websocket"], // Solo websocket, sin polling
   secure: false, // Desactiva wss en entornos no TLS
+  path: "/socket.io",
   rejectUnauthorized: false, // Acepta certificados auto-firmados si hubiera
 });
