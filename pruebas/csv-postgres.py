@@ -1,64 +1,55 @@
 import os
-import argparse
 import psycopg2
 import csv
 from datetime import datetime
+from dotenv import load_dotenv
 
-def export_to_csv(id_paciente, start_time, end_time, output_file):
-    # Leer credenciales de entorno
-    db_params = {
-        'host': os.getenv('PG_HOST', '127.0.0.1'),
-        'port': os.getenv('PG_PORT', '5432'),
-        'dbname': os.getenv('PG_DATABASE', 'pepi'),
-        'user': os.getenv('PG_USER', 'pepi_user'),
-        'password': os.getenv('PG_PASSWORD', ''),
-    }
+# Cargar variables de entorno desde el .env
+load_dotenv()
 
-    # Conectar a la base de datos
-    conn = psycopg2.connect(**db_params)
-    cursor = conn.cursor()
+# Obtener credenciales
+DB_HOST = os.getenv("PG_HOST")
+DB_PORT = os.getenv("PG_PORT")
+DB_NAME = os.getenv("PG_NAME")
+DB_USER = os.getenv("PG_USER")
+DB_PASSWORD = os.getenv("PG_PASSWORD")
 
-    # Consulta
-    query = """
-        SELECT ts, id, id_paciente, fp1, fp2, t3, t4, o1, o2, c3, c4, evento
-        FROM pepi
-        WHERE id_paciente = %s
-          AND ts BETWEEN %s AND %s
-        ORDER BY ts;
-    """
-    cursor.execute(query, (id_paciente, start_time, end_time))
-    rows = cursor.fetchall()
+# Conexión a PostgreSQL
+conn = psycopg2.connect(
+    host=DB_HOST,
+    port=DB_PORT,
+    dbname=DB_NAME,
+    user=DB_USER,
+    password=DB_PASSWORD
+)
 
-    # Los nombres de las columnas
-    column_names = [desc[0] for desc in cursor.description]
+# Crear cursor
+cur = conn.cursor()
 
-    # Escribir CSV
-    with open(output_file, 'w', newline='') as f:
-        writer = csv.writer(f)
-        writer.writerow(column_names)
-        writer.writerows(rows)
+# Consulta con filtro de fechas y paciente
+query = """
+    SELECT * FROM tu_tabla
+    WHERE ts >= %s AND ts < %s AND id_paciente = %s
+"""
 
-    print(f"✅ Export completed: {len(rows)} rows written to {output_file}")
+fecha_inicio = datetime(2025, 6, 16)
+fecha_fin = datetime(2025, 6, 19)  # Exclusivo para incluir todo el 18
+id_paciente = "Pablo"
 
-    cursor.close()
-    conn.close()
+cur.execute(query, (fecha_inicio, fecha_fin, id_paciente))
 
+# Obtener resultados
+rows = cur.fetchall()
+column_names = [desc[0] for desc in cur.description]
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Export patient EEG data to CSV")
-    parser.add_argument("--id-paciente", required=True, help="ID del paciente a filtrar")
-    parser.add_argument("--start", required=True, help="Fecha inicio (YYYY-MM-DD HH:MM:SS)")
-    parser.add_argument("--end", required=True, help="Fecha fin (YYYY-MM-DD HH:MM:SS)")
-    parser.add_argument("--output", default="export-postgres.csv", help="Nombre del archivo CSV de salida")
+# Exportar a CSV
+with open("exportacion_pablo.csv", "w", newline="", encoding="utf-8") as f:
+    writer = csv.writer(f)
+    writer.writerow(column_names)
+    writer.writerows(rows)
 
-    args = parser.parse_args()
+print("Exportación completada: exportacion_pablo.csv")
 
-    # Convertir fechas
-    try:
-        start_dt = datetime.fromisoformat(args.start)
-        end_dt = datetime.fromisoformat(args.end)
-    except ValueError as e:
-        print(f"❌ Error parsing dates: {e}")
-        exit(1)
-
-    export_to_csv(args.id_paciente, start_dt, end_dt, args.output)
+# Cierre
+cur.close()
+conn.close()
