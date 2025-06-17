@@ -1,13 +1,25 @@
-// frontend/src/socket.ts
 import { io } from "socket.io-client";
 
-// Leer la URL de WebSocket desde variables de entorno de Vite
-const socketUrl = import.meta.env.VITE_SOCKET_URL as string;
+// Detectar si estamos en local (docker/vite dev)
+const hostname = window.location.hostname;
 
-// Inicializar el socket; forzamos ws y deshabilitamos la verificación de certificado para entornos sin proxy SSL
+// URL que usarás en prod (defínela en .env como VITE_SOCKET_URL)
+const prodUrl = import.meta.env.VITE_SOCKET_URL as string;
+
+// Si estamos en localhost, usamos ws://localhost:3000
+const socketUrl =
+  hostname === "localhost" || hostname === "127.0.0.1"
+    ? "ws://localhost:3000"
+    : prodUrl;
+
+// Debug: imprime la URL para ver qué está usando
+console.log("🔗 Conectando WS a:", socketUrl);
+
 export const socket = io(socketUrl, {
-  transports: ["websocket"], // Solo websocket, sin polling
-  secure: false, // Desactiva wss en entornos no TLS
   path: "/socket.io",
-  rejectUnauthorized: false, // Acepta certificados auto-firmados si hubiera
+  transports: ["websocket", "polling"],
 });
+
+// Logs de depuración
+socket.on("connect", () => console.log("✅ WS conectado como", socket.id));
+socket.on("connect_error", (err) => console.error("❌ WS ERROR:", err));
