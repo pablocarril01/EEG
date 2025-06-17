@@ -1,4 +1,4 @@
-cat > (test - socket.js) << 'EOF';
+// test-socket.js
 const { io } = require('socket.io-client');
 
 const socket = io('http://127.0.0.1:3000', {
@@ -16,4 +16,3 @@ socket.on('connect_error', (err) => {
   console.error('❌ Falla la conexión local:', err.message);
   process.exit(1);
 });
-EOF;
