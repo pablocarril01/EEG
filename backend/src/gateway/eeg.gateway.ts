@@ -24,6 +24,7 @@ export class EegGateway implements OnGatewayConnection, OnGatewayDisconnect {
   server: Server;
 
   constructor(private readonly appService: AppService) {
+    // Confirmar arranque del Gateway
     this.logger.log('▶️ EegGateway instanciado y listo');
   }
 
@@ -41,7 +42,7 @@ export class EegGateway implements OnGatewayConnection, OnGatewayDisconnect {
     payload: { proyectoId: string; usuarioId: string },
   ) {
     this.logger.log(
-      `📨 Solicitud de datos recibida: proyecto=${payload.proyectoId}, usuario=${payload.usuarioId}`,
+      `📨 Solicitud de datos: proyecto=${payload.proyectoId}, usuario=${payload.usuarioId}`,
     );
     try {
       const response = await this.appService.getProyectoInfo(
@@ -49,9 +50,9 @@ export class EegGateway implements OnGatewayConnection, OnGatewayDisconnect {
         payload.usuarioId,
       );
       client.emit('datosRecibidos', response);
-      this.logger.log(`✅ Datos enviados al cliente [${client.id}]`);
+      this.logger.log(`✅ Datos enviados a [${client.id}]`);
     } catch (error) {
-      this.logger.error('❌ Error al obtener datos:', error);
+      this.logger.error('❌ Error al enviar datos:', error);
       client.emit('datosRecibidos', null);
     }
   }
