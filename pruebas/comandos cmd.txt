@@ -15,3 +15,8 @@ node generateData
 
 No LSB modules are available.
 noble
+
+POSTGRES
+
+sudo -u postgres psql
+\c pepi
