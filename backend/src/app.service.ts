@@ -55,6 +55,34 @@ export class AppService {
   }
 
   /**
+   * Solo aplica restar32768 + filtra longitud 8,
+   * y devuelve las últimas N muestras (N = rawValues.length).
+   */
+  processRedisStringDB(entry: string): number[][] {
+    // 1) Igual limpieza de marcadores
+    entry = entry.replace(/\s/g, '').replace(/^[if]|[if]$/g, '');
+    const sequences = entry.split(/fi|if/);
+
+    // 2) Extraer raw hex → decimal
+    const rawValues: number[][] = [];
+    sequences.forEach((seq) => {
+      seq.split(';').forEach((group) => {
+        const hexValues = group.split(',').filter((v) => v);
+        if (hexValues.length === 8) {
+          rawValues.push(hexValues.map((v) => parseInt(v, 16)));
+        }
+      });
+    });
+
+    // 3) Solo restar32768 + filtrar longitud
+    const processedDB = restar32768(rawValues).filter((f) => f.length === 8);
+
+    // 4) Extraer solo las últimas N muestras
+    const count = rawValues.length;
+    return processedDB.slice(-count);
+  }
+
+  /**
    * Método que utiliza el frontend para obtener datos y comentarios.
    * Reutiliza processRedisStringPG para el bloque completo,
    * decima y redondea los datos para la UI.

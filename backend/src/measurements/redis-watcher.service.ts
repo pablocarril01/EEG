@@ -78,7 +78,7 @@ export class RedisWatcherService implements OnModuleInit, OnModuleDestroy {
       const idPaciente = match[1];
 
       // Procesar string raw usando AppService
-      const muestras = this.appService.processRedisStringPG(raw);
+      const muestras = this.appService.processRedisStringDB(raw);
       this.logger.log(`Procesadas ${muestras.length} muestras`);
 
       // Mapear a filas para la BD
