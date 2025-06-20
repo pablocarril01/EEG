@@ -1,18 +1,25 @@
+// frontend/src/socket.ts
 import { io } from "socket.io-client";
 
-const isLocal =
-  window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1";
+// Determinar la URL de WebSocket:
+// 1. Si existe la variable VITE_SOCKET_URL, usarla.
+// 2. Si no, construir a partir del esquema y host actuales.
+const envUrl = import.meta.env.VITE_SOCKET_URL as string | undefined;
+const fallbackUrl = `${
+  window.location.protocol === "https:" ? "wss" : "ws"
+}://${window.location.host}`;
+const socketUrl = envUrl && envUrl.length > 0 ? envUrl : fallbackUrl;
 
-// Local con Docker (conexión directa a backend en puerto 3000)
-const localSocketURL = "http://localhost:3000";
+// Debug: muestra la URL final que se usará
+console.log("🔗 Conectando WS a:", socketUrl);
 
-// Producción: usar misma IP o dominio, pero WSS y puerto 443 (por Nginx)
-const productionSocketURL = undefined; // conecta automáticamente con mismo origen
-
-const socket = io(isLocal ? localSocketURL : productionSocketURL, {
+// Inicializar Socket.IO
+export const socket = io(socketUrl, {
   path: "/socket.io",
-  transports: ["websocket"],
+  transports: ["websocket", "polling"],
+  // autoConnect: false, // opcional si quieres controlar cuándo conectar
 });
 
-export { socket };
+// Logs de depuración
+socket.on("connect", () => console.log("✅ WS conectado:", socket.id));
+socket.on("connect_error", (err) => console.error("❌ WS ERROR:", err));

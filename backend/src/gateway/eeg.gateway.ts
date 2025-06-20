@@ -1,7 +1,8 @@
+import { Logger } from '@nestjs/common';
 import {
   WebSocketGateway,
-  SubscribeMessage,
   WebSocketServer,
+  SubscribeMessage,
   OnGatewayConnection,
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
@@ -9,35 +10,49 @@ import { Server, Socket } from 'socket.io';
 import { AppService } from '../app.service';
 
 @WebSocketGateway({
-  cors: { origin: 'http://193.146.34.10' },
+  path: '/socket.io',
+  cors: {
+    origin: ['http://localhost:3001', 'https://193.146.34.10'],
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
 })
 export class EegGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  private readonly logger = new Logger(EegGateway.name);
+
   @WebSocketServer()
   server: Server;
 
-  constructor(private readonly appService: AppService) {}
+  constructor(private readonly appService: AppService) {
+    // Confirmar arranque del Gateway
+    this.logger.log('▶️ EegGateway instanciado y listo');
+  }
 
   handleConnection(client: Socket) {
-    console.log(`Cliente conectado: ${client.id}`);
+    this.logger.log(`🔗 Cliente conectado [${client.id}]`);
   }
 
   handleDisconnect(client: Socket) {
-    console.log(`Cliente desconectado: ${client.id}`);
+    this.logger.log(`❌ Cliente desconectado [${client.id}]`);
   }
 
   @SubscribeMessage('solicitarDatos')
-  async handleDataRequest(
+  async solicitarDatos(
     client: Socket,
     payload: { proyectoId: string; usuarioId: string },
   ) {
+    this.logger.log(
+      `📨 Solicitud de datos: proyecto=${payload.proyectoId}, usuario=${payload.usuarioId}`,
+    );
     try {
       const response = await this.appService.getProyectoInfo(
         payload.proyectoId,
         payload.usuarioId,
       );
       client.emit('datosRecibidos', response);
+      this.logger.log(`✅ Datos enviados a [${client.id}]`);
     } catch (error) {
-      console.error('❌ Error al obtener datos:', error);
+      this.logger.error('❌ Error al enviar datos:', error);
       client.emit('datosRecibidos', null);
     }
   }
