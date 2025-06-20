@@ -35,7 +35,7 @@ export class RedisProvider {
     try {
       await this.connect();
       const data = await this.redisClient.lRange(key, -10, -1);
-      console.log('✅ Últimos datos obtenidos de Redis:', data);
+      //console.log('✅ Últimos datos obtenidos de Redis:', data);
       return data;
     } catch (err) {
       console.error('❌ Error obteniendo datos de Redis:', err);
