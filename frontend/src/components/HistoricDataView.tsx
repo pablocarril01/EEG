@@ -3,65 +3,73 @@ import React, { useState, useEffect } from "react";
 import ChartComponent from "./ChartComponent";
 import "./HistoricDataView.css";
 
+type HistoricResponse = {
+  datos: number[][];
+};
+
 const HistoricDataView: React.FC = () => {
   const [patients, setPatients] = useState<string[]>([]);
-  const [paciente, setPaciente] = useState<string>("");
-  const [start, setStart] = useState<string>("");
-  const [end, setEnd] = useState<string>("");
+  const [patientId, setPatientId] = useState<string>("");
+  const [startDate, setStartDate] = useState<string>("");
+  const [endDate, setEndDate] = useState<string>("");
   const [data, setData] = useState<number[][]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     fetch("/api/patients")
-      .then((r) => r.json())
+      .then((res) => res.json())
       .then((list: string[]) => setPatients(list))
-      .catch(console.error);
+      .catch((err) => console.error("Error fetching patients:", err));
   }, []);
 
-  const fetchData = async () => {
+  const handleFetch = async () => {
     setLoading(true);
-    const url = `/api/historico?paciente=${encodeURIComponent(
-      paciente
-    )}&start=${start}&end=${end}`;
     try {
-      const res = await fetch(url);
-      const json = await res.json();
+      const res = await fetch(
+        `/api/historico?paciente=${encodeURIComponent(
+          patientId
+        )}&start=${startDate}&end=${endDate}`
+      );
+      const json: HistoricResponse = await res.json();
       setData(json.datos);
-    } catch (e) {
-      console.error(e);
+    } catch (err) {
+      console.error("Error fetching historic data:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const downloadEdf = () => {
+  const handleDownload = () => {
     const url = `/api/historico/edf?paciente=${encodeURIComponent(
-      paciente
-    )}&start=${start}&end=${end}`;
+      patientId
+    )}&start=${startDate}&end=${endDate}`;
     fetch(url)
-      .then((r) => r.blob())
+      .then((res) => res.blob())
       .then((blob) => {
-        const a = document.createElement("a");
-        const fn = `${paciente}_${start.replace(/-/g, "")}-${end.replace(
+        const link = document.createElement("a");
+        const filename = `${patientId}_${startDate.replace(
           /-/g,
           ""
-        )}.edf`;
-        a.href = URL.createObjectURL(blob);
-        a.download = fn;
-        a.click();
+        )}-${endDate.replace(/-/g, "")}.edf`;
+        link.href = window.URL.createObjectURL(blob);
+        link.download = filename;
+        link.click();
       })
-      .catch(console.error);
+      .catch((err) => console.error("Error downloading EDF:", err));
   };
 
-  // ancho para el scroll: 2px por muestra (ajústalo)
-  const chartWidth = Math.max((data[0]?.length ?? 250) * 2, 500);
+  // dynamic width based on number of samples
+  const chartWidth = Math.max((data[0]?.length || 500) * 2, 500);
 
   return (
     <div className="historic-view">
-      <h2>Histórico de pacientes</h2>
       <div className="historic-controls">
-        <select value={paciente} onChange={(e) => setPaciente(e.target.value)}>
-          <option value="">— Seleccione —</option>
+        <select
+          value={patientId}
+          onChange={(e) => setPatientId(e.target.value)}
+          className="historic-select"
+        >
+          <option value="">-- Seleccione paciente --</option>
           {patients.map((id) => (
             <option key={id} value={id}>
               {id}
@@ -70,24 +78,32 @@ const HistoricDataView: React.FC = () => {
         </select>
         <input
           type="date"
-          value={start}
-          onChange={(e) => setStart(e.target.value)}
+          value={startDate}
+          onChange={(e) => setStartDate(e.target.value)}
+          className="historic-date"
         />
         <input
           type="date"
-          value={end}
-          onChange={(e) => setEnd(e.target.value)}
+          value={endDate}
+          onChange={(e) => setEndDate(e.target.value)}
+          className="historic-date"
         />
         <button
-          onClick={fetchData}
-          disabled={!paciente || !start || !end || loading}
+          onClick={handleFetch}
+          disabled={!patientId || !startDate || !endDate || loading}
+          className="btn btn-primary"
         >
-          {loading ? "Cargando..." : "Cargar gráfico"}
+          {loading ? "Cargando..." : "Mostrar Datos"}
         </button>
-        <button onClick={downloadEdf} disabled={!data.length}>
+        <button
+          onClick={handleDownload}
+          disabled={!data.length}
+          className="btn btn-secondary"
+        >
           Descargar EDF
         </button>
       </div>
+
       <div className="historic-chart-wrapper">
         <div
           className="historic-chart-inner"
@@ -96,11 +112,11 @@ const HistoricDataView: React.FC = () => {
           {data.length > 0 && (
             <ChartComponent
               data={data}
-              isAnimating={true}
-              animationDuration={1} /* dibuja todo al instante */
-              usuarioId={paciente}
+              isAnimating={false}
+              usuarioId={patientId}
               cicloCeros={0}
               shouldZero={false}
+              animationDuration={1}
             />
           )}
         </div>
