@@ -1,25 +1,33 @@
+// src/App.tsx
 import React, { useState, useEffect, useRef } from "react";
 import ChartComponent from "./components/ChartComponent";
+import HistoricDataView from "./components/HistoricDataView";
 import { TIEMPO_ACTUALIZACION } from "./config";
 import "./estilos.css";
 import { socket } from "./socket";
 
 type AppState =
   | "INICIAL"
+  | "COMPROBANDO_SENSOR"
   | "MOSTRANDO_DATOS"
   | "MOSTRANDO_CEROS"
-  | "COMPROBANDO_SENSOR"
   | "";
 
+type DatosResult = {
+  datos: number[][];
+  comentarios: string[];
+} | null;
+
 const App: React.FC = () => {
-  const [usuarioId, setUsuarioId] = useState("Pablo");
+  const [usuarioId, setUsuarioId] = useState<string>("Pablo");
   const [chartData, setChartData] = useState<number[][]>([
     [0, 0, 0, 0, 0, 0, 0, 0],
   ]);
   const [comentarios, setComentarios] = useState<string[]>([]);
   const [estado, setEstado] = useState<AppState>("INICIAL");
-  const [cicloCeros, setCicloCeros] = useState(0);
-  const [mostrarSelector, setMostrarSelector] = useState(true);
+  const [cicloCeros, setCicloCeros] = useState<number>(0);
+  const [mostrarSelector, setMostrarSelector] = useState<boolean>(true);
+  const [viewMode, setViewMode] = useState<"live" | "historic">("live");
 
   const previousData = useRef<number[][]>([[0, 0, 0, 0, 0, 0, 0, 0]]);
 
@@ -37,15 +45,9 @@ const App: React.FC = () => {
     return false;
   };
 
-  type DatosResult = {
-    datos: number[][];
-    comentarios: string[];
-  } | null;
-
-  const fetchFromBackend = (): Promise<DatosResult> => {
-    return new Promise((resolve) => {
+  const fetchFromBackend = (): Promise<DatosResult> =>
+    new Promise((resolve) => {
       socket.emit("solicitarDatos", { proyectoId: "PEPI", usuarioId });
-
       socket.once("datosRecibidos", (response) => {
         if (
           !response ||
@@ -54,17 +56,14 @@ const App: React.FC = () => {
         ) {
           resolve(null);
         } else {
-          resolve({
-            datos: response.datos,
-            comentarios: response.comentarios,
-          });
+          resolve({ datos: response.datos, comentarios: response.comentarios });
         }
       });
     });
-  };
 
   const iniciarConDatos = async () => {
     setMostrarSelector(false);
+    setViewMode("live");
     setEstado("COMPROBANDO_SENSOR");
 
     const result = await fetchFromBackend();
@@ -90,17 +89,20 @@ const App: React.FC = () => {
     }
   };
 
+  const verHistorico = () => {
+    setMostrarSelector(false);
+    setViewMode("historic");
+  };
+
   const manejarFinAnimacion = async () => {
     if (estado === "MOSTRANDO_DATOS") {
       const result = await fetchFromBackend();
       if (result) {
         if (isDataDifferent(result.datos, previousData.current)) {
-          console.log("Datos diferentes, actualizando...");
           setChartData(result.datos);
           previousData.current = result.datos;
           setComentarios(result.comentarios);
         } else {
-          console.log("Datos iguales, mostrando ceros...");
           setEstado("MOSTRANDO_CEROS");
           setCicloCeros((prev) => prev + 1);
         }
@@ -117,7 +119,6 @@ const App: React.FC = () => {
       pollingInterval = setInterval(async () => {
         const result = await fetchFromBackend();
         if (result && isDataDifferent(result.datos, previousData.current)) {
-          console.log("Datos diferentes, actualizando...");
           clearInterval(pollingInterval!);
           setChartData(result.datos);
           previousData.current = result.datos;
@@ -135,32 +136,19 @@ const App: React.FC = () => {
   const detener = () => {
     setEstado("INICIAL");
     setMostrarSelector(true);
+    setViewMode("live");
   };
-  /*
-  const getEstadoVisual = (estado: AppState) => {
-    switch (estado) {
-      case "MOSTRANDO_CEROS":
-        return {
-          color: "var(--color-desconectado)",
-        };
-      case "COMPROBANDO_SENSOR":
-        return {
-          color: "var(--color-comprobando)",
-        };
-      case "MOSTRANDO_DATOS":
-        return {
-          color: "var(--color-datos)",
-        };
-      default:
-        return { color: "var(--color-default)" };
-    }
-  };
-  const estadoVisual = getEstadoVisual(estado);
-  */
+
+  useEffect(() => {
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
   return (
     <div className="app-container">
-      {mostrarSelector && (
+      {/* Selector inicial: paciente y acciones */}
+      {mostrarSelector && viewMode === "live" && (
         <div className="selector-container">
           <img src="/PEPI.png" alt="Logo PEPI" className="logo-cima" />
           <div className="selector-row">
@@ -179,14 +167,28 @@ const App: React.FC = () => {
                 <option value="5">5</option>
               </select>
             </label>
-            <button className="btn btn-start" onClick={iniciarConDatos}>
+            <button
+              className="btn btn-start"
+              onClick={iniciarConDatos}
+              disabled={!usuarioId}
+            >
               Cargar Datos
+            </button>
+          </div>
+          <div style={{ marginTop: "1rem" }}>
+            <button
+              className="btn btn-secondary"
+              onClick={verHistorico}
+              disabled={!usuarioId}
+            >
+              Ver Histórico
             </button>
           </div>
         </div>
       )}
 
-      {!mostrarSelector && (
+      {/* Vista en vivo */}
+      {!mostrarSelector && viewMode === "live" && (
         <>
           <div
             className="estado-layout"
@@ -210,17 +212,9 @@ const App: React.FC = () => {
               Paciente: {usuarioId}
             </div>
             <div>
-              {estado && (
-                <p
-                  style={{
-                    color: "white",
-                    fontSize: "0.88rem",
-                    margin: 0,
-                  }}
-                >
-                  PEPI v1.0 de 8 canales. 10 segundos / barrido, 500 Hz
-                </p>
-              )}
+              <p style={{ color: "white", fontSize: "0.88rem", margin: 0 }}>
+                PEPI v1.0 de 8 canales. 10 segundos / barrido, 500 Hz
+              </p>
             </div>
             <button
               className="btn btn-stop"
@@ -246,6 +240,9 @@ const App: React.FC = () => {
                 animationDuration={TIEMPO_ACTUALIZACION}
                 cicloCeros={cicloCeros}
               />
+              {estado === "MOSTRANDO_CEROS" && (
+                <div className="ciclo-ceros">Ciclos de cero: {cicloCeros}</div>
+              )}
             </div>
           )}
 
@@ -254,9 +251,9 @@ const App: React.FC = () => {
               <h2>Comentarios</h2>
               {comentarios.length > 0 ? (
                 <ul className="comment-list">
-                  {comentarios.map((comentario, index) => (
-                    <li key={index} className="comment-item">
-                      {comentario}
+                  {comentarios.map((c, i) => (
+                    <li key={i} className="comment-item">
+                      {c}
                     </li>
                   ))}
                 </ul>
@@ -265,6 +262,16 @@ const App: React.FC = () => {
               )}
             </div>
           )}
+        </>
+      )}
+
+      {/* Vista histórico */}
+      {viewMode === "historic" && (
+        <>
+          <button className="btn btn-stop" onClick={detener}>
+            Volver
+          </button>
+          <HistoricDataView />
         </>
       )}
     </div>
