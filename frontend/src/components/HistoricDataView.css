@@ -1,25 +1,27 @@
-/* src/components/HistoricDataView.css */
-
 .historic-view {
-  padding: 1rem;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .historic-controls {
+  padding: 1rem;
+  background: #222;
   display: flex;
   gap: 0.5rem;
-  align-items: center;
-  flex-wrap: wrap;
-  margin-bottom: 1rem;
 }
 
 .historic-chart-wrapper {
+  flex: 1;
   overflow-x: auto;
-  border: 1px solid #444;
+  overflow-y: hidden;
   background: #000;
-  height: 600px; /* ajusta altura */
 }
 
 .historic-chart-inner {
-  display: inline-block;
   height: 100%;
 }
