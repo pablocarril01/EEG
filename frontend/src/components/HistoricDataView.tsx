@@ -8,8 +8,8 @@ type HistoricResponse = {
 };
 
 const HistoricDataView: React.FC = () => {
-  const [patients, setPatients] = useState<string[]>([]);
-  const [patientId, setPatientId] = useState<string>("");
+  const [pacientes, setPacientes] = useState<string[]>([]);
+  const [pacienteId, setPacienteId] = useState<string>("");
   const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [data, setData] = useState<number[][]>([]);
@@ -17,13 +17,13 @@ const HistoricDataView: React.FC = () => {
 
   // Carga la lista de pacientes desde el endpoint correcto
   useEffect(() => {
-    fetch("/api/historico/patients")
+    fetch('http://193.146.34.10:3000/api/historico/pacientes')
       .then((res) => {
         if (!res.ok) throw new Error(`Status ${res.status}`);
         return res.json();
       })
-      .then((list: string[]) => setPatients(list))
-      .catch((err) => console.error("Error fetching patients:", err));
+      .then((list: string[]) => setPacientes(list))
+      .catch((err) => console.error("Error fetching pacientes:", err));
   }, []);
 
   const handleFetch = async () => {
@@ -31,7 +31,7 @@ const HistoricDataView: React.FC = () => {
     try {
       const res = await fetch(
         `/api/historico?paciente=${encodeURIComponent(
-          patientId
+          pacienteId
         )}&start=${startDate}&end=${endDate}`
       );
       if (!res.ok) throw new Error(`Status ${res.status}`);
@@ -46,7 +46,7 @@ const HistoricDataView: React.FC = () => {
 
   const handleDownload = () => {
     const url = `/api/historico/edf?paciente=${encodeURIComponent(
-      patientId
+      pacienteId
     )}&start=${startDate}&end=${endDate}`;
     fetch(url)
       .then((res) => {
@@ -55,7 +55,7 @@ const HistoricDataView: React.FC = () => {
       })
       .then((blob) => {
         const link = document.createElement("a");
-        const filename = `${patientId}_${startDate.replace(
+        const filename = `${pacienteId}_${startDate.replace(
           /-/g,
           ""
         )}-${endDate.replace(/-/g, "")}.edf`;
@@ -73,12 +73,12 @@ const HistoricDataView: React.FC = () => {
     <div className="historic-view">
       <div className="historic-controls">
         <select
-          value={patientId}
-          onChange={(e) => setPatientId(e.target.value)}
+          value={pacienteId}
+          onChange={(e) => setPacienteId(e.target.value)}
           className="historic-select"
         >
           <option value="">-- Seleccione paciente --</option>
-          {patients.map((id) => (
+          {pacientes.map((id) => (
             <option key={id} value={id}>
               {id}
             </option>
@@ -98,7 +98,7 @@ const HistoricDataView: React.FC = () => {
         />
         <button
           onClick={handleFetch}
-          disabled={!patientId || !startDate || !endDate || loading}
+          disabled={!pacienteId || !startDate || !endDate || loading}
           className="btn btn-primary"
         >
           {loading ? "Cargando..." : "Mostrar Datos"}
@@ -121,7 +121,7 @@ const HistoricDataView: React.FC = () => {
             <ChartComponent
               data={data}
               isAnimating={false}
-              usuarioId={patientId}
+              usuarioId={pacienteId}
               shouldZero={false}
               animationDuration={1}
             />

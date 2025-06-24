@@ -1,7 +1,6 @@
-// src/components/ChartComponent.tsx
 import React, { useRef, useEffect, useState } from "react";
 
-export interface ChartComponentProps {
+interface ChartComponentProps {
   data: number[][];
   isAnimating: boolean;
   usuarioId: string;
@@ -14,36 +13,32 @@ export interface ChartComponentProps {
 const channelNames = ["FP1", "FP2", "T3", "T4", "O1", "O2", "C3", "C4"];
 const colors = [
   "#00FF00",
-  "#FF0000",
-  "#0000FF",
+  "#00FF00",
   "#FFFF00",
-  "#00FFFF",
-  "#FF00FF",
-  "#FFFFFF",
-  "#C0C0C0",
+  "#FFFF00",
+  "#6699FF",
+  "#6699FF",
+  "#FF0000",
+  "#FF0000",
 ];
 
+// Este es el orden de reordenación interna de los datos
+const indexMap = [7, 0, 6, 1, 5, 2, 4, 3];
+
 const ChartComponent: React.FC<ChartComponentProps> = ({
-  data,
+  data = [],
   isAnimating,
   usuarioId,
   onAnimationEnd,
   shouldZero = false,
   animationDuration,
-  cicloCeros,
+  cicloCeros = 0,
 }) => {
-  // Ensure component updates when cicloCeros changes
-  useEffect(() => {
-    // no-op, depends on cicloCeros to trigger rerender
-  }, [cicloCeros]);
-
-  const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const displayedDataRef = useRef<number[][]>([]);
   const startTimeRef = useRef<number>(0);
-  const [canvasWidth, setCanvasWidth] = useState<number>(
-    containerRef.current?.offsetWidth ?? 1200
-  );
+  const [canvasWidth, setCanvasWidth] = useState(1200);
 
   const height = 1200;
   const numChannels = channelNames.length;
@@ -52,20 +47,23 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
   const yMax = 2000;
 
   useEffect(() => {
-    const parent = containerRef.current?.parentElement;
-    if (parent && !parent.classList.contains("historic-chart-inner")) {
-      const ro = new ResizeObserver(() => {
-        if (containerRef.current) {
-          setCanvasWidth(containerRef.current.offsetWidth);
-        }
-      });
-      if (containerRef.current) ro.observe(containerRef.current);
-      return () => ro.disconnect();
+    const resizeObserver = new ResizeObserver(() => {
+      if (containerRef.current) {
+        const newWidth = containerRef.current.offsetWidth;
+        setCanvasWidth(newWidth);
+      }
+    });
+
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
     }
+
+    return () => {
+      resizeObserver.disconnect();
+    };
   }, []);
 
   useEffect(() => {
-    // Reset displayed data when user changes
     displayedDataRef.current = [];
   }, [usuarioId]);
 
@@ -75,52 +73,72 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const finalData = shouldZero
-      ? data.map((row) => row.map((v) => (v === 0 ? 0 : v)))
-      : data;
+    let animationFrameId: number;
+
+    // Reordena los datos para que cada canal visual se corresponda con el orden deseado
+    const remappedData = data.map((entry) =>
+      indexMap.map((idx) => entry?.[idx] ?? 0)
+    );
+
+    const finalData: number[][] = shouldZero
+      ? remappedData.map(() => new Array(numChannels).fill(0))
+      : remappedData;
+
     const totalPoints = finalData.length;
     if (totalPoints === 0) return;
 
     if (displayedDataRef.current.length !== totalPoints) {
-      displayedDataRef.current = Array.from({ length: totalPoints }, () =>
-        new Array<number>(numChannels).fill(0)
-      );
+      displayedDataRef.current = Array(totalPoints)
+        .fill(0)
+        .map(() => Array(numChannels).fill(0));
     }
 
-    let rafId: number;
-    const draw = (ts: number) => {
-      if (!startTimeRef.current) startTimeRef.current = ts;
-      const elapsed = ts - startTimeRef.current;
+    const draw = (timestamp: number) => {
+      if (!startTimeRef.current) startTimeRef.current = timestamp;
+      const elapsed = timestamp - startTimeRef.current;
       const progress = Math.min(elapsed / animationDuration, 1);
-      const cursor = Math.floor(progress * totalPoints);
+      const currentCursor = Math.floor(progress * totalPoints);
 
-      for (let i = 0; i < cursor; i++) {
+      for (let i = 0; i <= currentCursor && i < totalPoints; i++) {
         displayedDataRef.current[i] = finalData[i];
       }
 
       ctx.clearRect(0, 0, canvasWidth, height);
+
       for (let c = 0; c < numChannels; c++) {
         ctx.beginPath();
         ctx.strokeStyle = colors[c % colors.length];
         ctx.lineWidth = 1;
+
         const offsetY = c * channelHeight;
         const midY = offsetY + channelHeight / 2;
-        let moved = false;
-        for (let i = 0; i < displayedDataRef.current.length; i++) {
-          const x = (i / (totalPoints - 1)) * canvasWidth;
-          const yRaw = displayedDataRef.current[i][c];
-          const y = midY - ((yRaw - yMin) / (yMax - yMin)) * channelHeight;
-          if (!moved) {
+        const scaleY = channelHeight / 2 / (yMax - yMin / 2);
+
+        let hasMoved = false;
+
+        for (let i = 0; i < totalPoints; i++) {
+          const val = displayedDataRef.current[i]?.[c];
+
+          if (val === undefined || val < yMin || val > yMax) {
+            hasMoved = false;
+            continue;
+          }
+
+          const x = (i / totalPoints) * canvasWidth;
+          const y = midY - val * scaleY;
+
+          if (!hasMoved) {
             ctx.moveTo(x, y);
-            moved = true;
+            hasMoved = true;
           } else {
             ctx.lineTo(x, y);
           }
         }
+
         ctx.stroke();
       }
 
-      const cursorX = (cursor / (totalPoints - 1)) * canvasWidth;
+      const cursorX = (currentCursor / totalPoints) * canvasWidth;
       ctx.beginPath();
       ctx.moveTo(cursorX, 0);
       ctx.lineTo(cursorX, height);
@@ -129,44 +147,46 @@ const ChartComponent: React.FC<ChartComponentProps> = ({
       ctx.stroke();
 
       if (progress < 1) {
-        rafId = requestAnimationFrame(draw);
+        animationFrameId = requestAnimationFrame(draw);
       } else {
         startTimeRef.current = 0;
         if (onAnimationEnd) onAnimationEnd();
       }
     };
 
-    if (isAnimating) {
+    if (isAnimating && finalData.length > 0) {
       startTimeRef.current = 0;
-      rafId = requestAnimationFrame(draw);
-    } else {
-      startTimeRef.current = performance.now() - animationDuration;
-      rafId = requestAnimationFrame(draw);
+      animationFrameId = requestAnimationFrame(draw);
     }
 
-    return () => cancelAnimationFrame(rafId);
+    return () => {
+      cancelAnimationFrame(animationFrameId);
+    };
   }, [
-    data,
     isAnimating,
+    data,
     shouldZero,
     animationDuration,
+    cicloCeros,
     usuarioId,
     canvasWidth,
   ]);
 
   return (
     <div style={{ display: "flex", width: "100%" }}>
-      <div style={{ width: "fit-content" }}>
+      <div style={{ width: "fit-content", paddingTop: "0px" }}>
         {channelNames.map((name, i) => (
           <div
             key={i}
             style={{
-              height: channelHeight,
+              height: `${channelHeight}px`,
               display: "flex",
               alignItems: "center",
+              justifyContent: "flex-start",
               color: "white",
-              fontSize: 12,
-              paddingRight: 8,
+              fontSize: "12px",
+              whiteSpace: "nowrap",
+              paddingRight: "0px",
             }}
           >
             {name}
