@@ -15,9 +15,13 @@ const HistoricDataView: React.FC = () => {
   const [data, setData] = useState<number[][]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
+  // Carga la lista de pacientes desde el endpoint correcto
   useEffect(() => {
-    fetch("/api/patients")
-      .then((res) => res.json())
+    fetch("/api/historico/patients")
+      .then((res) => {
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        return res.json();
+      })
       .then((list: string[]) => setPatients(list))
       .catch((err) => console.error("Error fetching patients:", err));
   }, []);
@@ -30,6 +34,7 @@ const HistoricDataView: React.FC = () => {
           patientId
         )}&start=${startDate}&end=${endDate}`
       );
+      if (!res.ok) throw new Error(`Status ${res.status}`);
       const json: HistoricResponse = await res.json();
       setData(json.datos);
     } catch (err) {
@@ -44,7 +49,10 @@ const HistoricDataView: React.FC = () => {
       patientId
     )}&start=${startDate}&end=${endDate}`;
     fetch(url)
-      .then((res) => res.blob())
+      .then((res) => {
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        return res.blob();
+      })
       .then((blob) => {
         const link = document.createElement("a");
         const filename = `${patientId}_${startDate.replace(
@@ -58,7 +66,7 @@ const HistoricDataView: React.FC = () => {
       .catch((err) => console.error("Error downloading EDF:", err));
   };
 
-  // dynamic width based on number of samples
+  // Cálculo del ancho dinámico para scroll horizontal
   const chartWidth = Math.max((data[0]?.length || 500) * 2, 500);
 
   return (
@@ -114,7 +122,6 @@ const HistoricDataView: React.FC = () => {
               data={data}
               isAnimating={false}
               usuarioId={patientId}
-              cicloCeros={0}
               shouldZero={false}
               animationDuration={1}
             />

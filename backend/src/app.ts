@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { createClient } from 'redis';
+import historicoRouter from './historico/historico';
 
 const app = express();
 
@@ -9,6 +10,9 @@ app.use(express.json());
 
 // Habilitar CORS
 app.use(cors());
+
+// Montar el router de histórico bajo /api/historico
+app.use('/api/historico', historicoRouter);
 
 // Crear el cliente de Redis
 const client = createClient({
