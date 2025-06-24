@@ -14,10 +14,16 @@ app.use(cors());
 // Monta las rutas de histórico en /api/historico
 app.use('/api/historico', historicoRouter);
 
-console.log(app._router.stack
-  .filter(r => r.route)
-  .map(r => Object.keys((r as any).route.methods)[0].toUpperCase() + ' ' + (r as any).route.path)
+console.log(
+  app._router.stack
+    .filter(layer => layer.route)
+    .map(layer => {
+      const route = (layer as any).route;
+      const method = Object.keys(route.methods)[0].toUpperCase();
+      return `${method} ${route.path}`;
+    })
 );
+
 
 
 // (Opcional) Otra ruta, p.ej. para Redis
