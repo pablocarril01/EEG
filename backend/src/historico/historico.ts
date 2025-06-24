@@ -13,9 +13,9 @@ const pool = new Pool({
   password: process.env.PG_PASSWORD!,
 });
 
-// 1) GET  /api/historico/patients
+// 1) GET  /api/historico/pacientes
 router.get(
-  '/patients',
+  '/pacientes',
   async (_req: Request, res: Response) => {
     try {
       const { rows } = await pool.query<{ id_paciente: string }>(

@@ -17,7 +17,7 @@ const HistoricDataView: React.FC = () => {
 
   // Carga la lista de pacientes desde el endpoint correcto
   useEffect(() => {
-    fetch('https://193.146.34.10:3000/api/historico/pacientes')
+    fetch('/api/historico/pacientes')
       .then((res) => {
         if (!res.ok) throw new Error(`Status ${res.status}`);
         return res.json();
