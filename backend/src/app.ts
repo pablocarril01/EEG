@@ -1,50 +1,117 @@
-import express from 'express';
-import cors from 'cors';
-import { createClient } from 'redis';
-import historicoRouter from './historico/historico';
+// backend/src/historico/historico.ts
+import express, { Request, Response, NextFunction } from 'express';
+import { Pool } from 'pg';
+import { spawn } from 'child_process';
+import path from 'path';
 
-const app = express();
+// Creamos un Router de Express
+const router = express.Router();
 
-// Middleware para parsear JSON
-app.use(express.json());
-
-// Habilitar CORS
-app.use(cors());
-
-// Montar el router de histórico bajo /api/historico
-app.use('/api/historico', historicoRouter);
-
-// Crear el cliente de Redis
-const client = createClient({
-  socket: {
-    host: process.env.REDIS_HOST || 'localhost', // Dirección del servidor Redis
-    port: parseInt(process.env.REDIS_PORT || '6379'), // Puerto de Redis
-  },
+// Configuración de PostgreSQL
+const pool = new Pool({
+  host:     process.env.PG_HOST,
+  port:     Number(process.env.PG_PORT),
+  database: process.env.PG_DB,
+  user:     process.env.PG_USER,
+  password: process.env.PG_PASSWORD,
 });
 
-// Manejar errores de conexión
-client.on('error', (err) => {
-  console.error('Error de conexión a Redis:', err);
-});
-
-// Conectar al servidor de Redis
-client.connect();
-
-// Ruta para obtener los valores hexadecimales desde Redis
-app.get('/api/hexValues', async (req, res) => {
-  try {
-    const data = await client.get('hexValues');
-    if (data) {
-      const parsedData = JSON.parse(data); // Parseamos los datos
-      res.json(parsedData); // Devolvemos los datos en formato JSON
-    } else {
-      res.status(404).json({ error: 'No se encontraron datos en Redis' });
+// 1) Listar pacientes únicos
+// GET /api/historico/patients
+router.get(
+  '/patients',
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { rows } = await pool.query<{ id_paciente: string }>(
+        `SELECT DISTINCT id_paciente FROM pepi ORDER BY id_paciente;`
+      );
+      const pacientes = rows.map(r => r.id_paciente);
+      res.json(pacientes);
+      next();
+    } catch (err) {
+      console.error('Error obteniendo pacientes:', err);
+      next(err);
     }
-  } catch (err) {
-    console.error('Error al obtener datos de Redis:', err);
-    res.status(500).json({ error: 'Error al obtener datos de Redis' });
   }
-});
+);
 
-// Exportar la aplicación Express
-export default app;
+// 2) Servir datos históricos para gráfica
+// GET /api/historico?paciente=...&start=YYYY-MM-DD&end=YYYY-MM-DD
+router.get(
+  '/',
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { paciente, start, end } = req.query as Record<string, string>;
+    if (!paciente || !start || !end) {
+      res.status(400).json({ error: 'Faltan parámetros: paciente, start o end' });
+      return next();
+    }
+    try {
+      const { rows } = await pool.query(
+        `SELECT fp1, fp2, t3, t4, o1, o2, c3, c4, evento
+         FROM pepi
+         WHERE id_paciente = $1
+           AND ts BETWEEN $2 AND $3
+         ORDER BY ts;`,
+        [paciente, start, end]
+      );
+
+      const datos: number[][] = rows.map(row =>
+        ['fp1','fp2','t3','t4','o1','o2','c3','c4','evento']
+          .map(ch => Number((row as any)[ch]))
+      );
+
+      res.json({ datos });
+      next();
+    } catch (err) {
+      console.error('Error obteniendo histórico:', err);
+      next(err);
+    }
+  }
+);
+
+// 3) Generar y servir EDF
+// GET /api/historico/edf?paciente=...&start=...&end=...
+router.get(
+  '/edf',
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { paciente, start, end } = req.query as Record<string, string>;
+    if (!paciente || !start || !end) {
+      res.status(400).json({ error: 'Faltan parámetros: paciente, start o end' });
+      return next();
+    }
+    try {
+      const scriptPath = path.resolve(__dirname, '../../scripts/generate_edf.py');
+      const py = spawn('python3', [
+        scriptPath,
+        '--paciente', paciente,
+        '--start', start,
+        '--end', end
+      ]);
+
+      const chunks: Buffer[] = [];
+      py.stdout.on('data', chunk => chunks.push(Buffer.from(chunk)));
+      py.stderr.on('data', err => console.error('EDF script error:', err.toString()));
+
+      py.on('close', code => {
+        if (code === 0) {
+          const edfBuffer = Buffer.concat(chunks);
+          const filename = `${paciente}_${start.replace(/-/g,'')}-${end.replace(/-/g,'')}.edf`;
+          res
+            .status(200)
+            .header('Content-Type', 'application/octet-stream')
+            .header('Content-Disposition', `attachment; filename=${filename}`)
+            .send(edfBuffer);
+          next();
+        } else {
+          console.error(`EDF script exited with code ${code}`);
+          next(new Error('Error generando archivo EDF'));
+        }
+      });
+    } catch (err) {
+      console.error('Error interno generando EDF:', err);
+      next(err);
+    }
+  }
+);
+
+export default router;
