@@ -17,8 +17,8 @@ const pool = new Pool({
 });
 
 // 1) Listar pacientes únicos
-//    GET /api/historico/patients
-router.get('/patients', async (req: Request, res: Response) => {
+//    GET /api/historico/pacientes
+router.get('/pacientes', async (req: Request, res: Response) => {
   try {
     const { rows } = await pool.query<{ id_paciente: string }>(`
       SELECT DISTINCT id_paciente
