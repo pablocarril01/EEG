@@ -6,6 +6,8 @@ import https from 'https';
 import http from 'http';
 import historicoRouter from './historico/historico';
 
+console.log('🚀 Arrancando API en', __filename);
+
 const app = express();
 
 app.use(express.json());
@@ -15,16 +17,15 @@ app.use(cors());
 app.use('/api/historico', historicoRouter);
 
 console.log(
+  'RUTAS EXPRESS:',
   app._router.stack
-    .filter(layer => layer.route)
-    .map(layer => {
+    .filter((layer) => layer.route)
+    .map((layer) => {
       const route = (layer as any).route;
       const method = Object.keys(route.methods)[0].toUpperCase();
       return `${method} ${route.path}`;
-    })
+    }),
 );
-
-
 
 // (Opcional) Otra ruta, p.ej. para Redis
 app.get('/api/hexValues', async (_req: Request, res: Response) => {
@@ -51,8 +52,11 @@ app.get('/api/hexValues', async (_req: Request, res: Response) => {
 });
 
 // Carga certificados TLS
-const key  = fs.readFileSync(path.resolve(__dirname, '../cert/key.pem'), 'utf8');
-const cert = fs.readFileSync(path.resolve(__dirname, '../cert/cert.pem'), 'utf8');
+const key = fs.readFileSync(path.resolve(__dirname, '../cert/key.pem'), 'utf8');
+const cert = fs.readFileSync(
+  path.resolve(__dirname, '../cert/cert.pem'),
+  'utf8',
+);
 https.createServer({ key, cert }, app).listen(443, () => {
   console.log('Servidor HTTPS en puerto 443');
 });
@@ -66,4 +70,4 @@ redirectApp.get('*', (req: Request, res: Response) => {
 http.createServer(redirectApp).listen(80, () => {
   console.log('Servidor HTTP redirige a HTTPS en puerto 80');
 });
- export default app;
+export default app;
