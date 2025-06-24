@@ -16,16 +16,15 @@ const HistoricDataView: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
 
   // Carga la lista de pacientes desde el endpoint correcto
-useEffect(() => {
-  fetch('/api/historico/pacientes')
-    .then(res => {
-      if (!res.ok) throw new Error(`Status ${res.status}`);
-      return res.json();
-    })
-    .then((list: string[]) => setPacientes(list))
-    .catch(err => console.error('Error fetching patients:', err));
-}, []);
-
+  useEffect(() => {
+    fetch("http://193.146.34.10:3000/api/historico/pacientes")
+      .then((res) => {
+        if (!res.ok) throw new Error(`Status ${res.status}`);
+        return res.json();
+      })
+      .then((list: string[]) => setPacientes(list))
+      .catch((err) => console.error("Error fetching patients:", err));
+  }, []);
 
   const handleFetch = async () => {
     setLoading(true);
