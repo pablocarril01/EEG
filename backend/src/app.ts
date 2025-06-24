@@ -70,4 +70,10 @@ redirectApp.get('*', (req: Request, res: Response) => {
 http.createServer(redirectApp).listen(80, () => {
   console.log('Servidor HTTP redirige a HTTPS en puerto 80');
 });
+
+// API HTTP “de toda la vida” en el puerto 3000, sin TLS ni redirecciones
+app.listen(3000, () => {
+  console.log('🚧 API HTTP escuchando en puerto 3000');
+});
+
 export default app;
