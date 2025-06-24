@@ -14,6 +14,12 @@ app.use(cors());
 // Monta las rutas de histórico en /api/historico
 app.use('/api/historico', historicoRouter);
 
+console.log(app._router.stack
+  .filter(r => r.route)
+  .map(r => Object.keys((r as any).route.methods)[0].toUpperCase() + ' ' + (r as any).route.path)
+);
+
+
 // (Opcional) Otra ruta, p.ej. para Redis
 app.get('/api/hexValues', async (_req: Request, res: Response) => {
   const { createClient } = await import('redis');
