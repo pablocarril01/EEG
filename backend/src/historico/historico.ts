@@ -6,10 +6,10 @@ import path from 'path';
 const router = Router();
 
 const pool = new Pool({
-  host:     process.env.PG_HOST!,
-  port:     Number(process.env.PG_PORT),
+  host: process.env.PG_HOST!,
+  port: Number(process.env.PG_PORT),
   database: process.env.PG_DB!,
-  user:     process.env.PG_USER!,
+  user: process.env.PG_USER!,
   password: process.env.PG_PASSWORD!,
 });
 
@@ -17,9 +17,9 @@ const pool = new Pool({
 router.get('/pacientes', async (_req: Request, res: Response) => {
   try {
     const result = await pool.query<{ id_paciente: string }>(
-      'SELECT DISTINCT id_paciente FROM pepi ORDER BY id_paciente;'
+      'SELECT DISTINCT id_paciente FROM pepi ORDER BY id_paciente;',
     );
-    const lista = result.rows.map(r => r.id_paciente);
+    const lista = result.rows.map((r) => r.id_paciente);
     res.json(lista);
   } catch (error) {
     console.error('Error obteniendo pacientes:', error);
@@ -30,8 +30,8 @@ router.get('/pacientes', async (_req: Request, res: Response) => {
 // 2) Servir datos históricos: GET /api/historico?paciente=..&start=..&end=..
 router.get('/', async (req: Request, res: Response) => {
   const paciente = String(req.query.paciente || '');
-  const start    = String(req.query.start   || '');
-  const end      = String(req.query.end     || '');
+  const start = String(req.query.start || '');
+  const end = String(req.query.end || '');
 
   if (!paciente || !start || !end) {
     res.status(400).json({ error: 'Faltan parámetros: paciente, start o end' });
@@ -45,11 +45,12 @@ router.get('/', async (req: Request, res: Response) => {
        WHERE id_paciente = $1
          AND ts BETWEEN $2 AND $3
        ORDER BY ts;`,
-      [paciente, start, end]
+      [paciente, start, end],
     );
     const datos = rows.map((row: any) =>
-      ['fp1','fp2','t3','t4','o1','o2','c3','c4']
-        .map(canal => Number(row[canal]))
+      ['fp1', 'fp2', 't3', 't4', 'o1', 'o2', 'c3', 'c4'].map((canal) =>
+        Number(row[canal]),
+      ),
     );
     res.json({ datos });
   } catch (error) {
@@ -61,8 +62,8 @@ router.get('/', async (req: Request, res: Response) => {
 // 3) Generar y servir EDF: GET /api/historico/edf?paciente=..&start=..&end=..
 router.get('/edf', async (req: Request, res: Response) => {
   const paciente = String(req.query.paciente || '');
-  const start    = String(req.query.start   || '');
-  const end      = String(req.query.end     || '');
+  const start = String(req.query.start || '');
+  const end = String(req.query.end || '');
 
   if (!paciente || !start || !end) {
     res.status(400).json({ error: 'Faltan parámetros: paciente, start o end' });
@@ -70,22 +71,27 @@ router.get('/edf', async (req: Request, res: Response) => {
   }
 
   try {
-    const scriptPath = path.resolve(__dirname, '../../scripts/generate_edf.py');
+    const scriptPath = path.resolve(__dirname, '../../scripts/generar-edf.py');
     const py = spawn('python3', [
       scriptPath,
-      '--paciente', paciente,
-      '--start',    start,
-      '--end',      end
+      '--paciente',
+      paciente,
+      '--start',
+      start,
+      '--end',
+      end,
     ]);
 
     const bufs: Buffer[] = [];
-    py.stdout.on('data', chunk => bufs.push(chunk));
-    py.stderr.on('data', err => console.error('EDF script error:', err.toString()));
+    py.stdout.on('data', (chunk) => bufs.push(chunk));
+    py.stderr.on('data', (err) =>
+      console.error('EDF script error:', err.toString()),
+    );
 
-    py.on('close', code => {
+    py.on('close', (code) => {
       if (code === 0) {
         const edf = Buffer.concat(bufs);
-        const filename = `${paciente}_${start.replace(/-/g,'')}-${end.replace(/-/g,'')}.edf`;
+        const filename = `${paciente}_${start.replace(/-/g, '')}-${end.replace(/-/g, '')}.edf`;
         res
           .status(200)
           .header('Content-Type', 'application/octet-stream')
