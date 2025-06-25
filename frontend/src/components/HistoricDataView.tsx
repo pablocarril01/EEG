@@ -15,32 +15,49 @@ const HistoricDataView: React.FC = () => {
   const [data, setData] = useState<number[][]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Carga la lista de pacientes desde el endpoint correcto
+  // Carga la lista de pacientes
   useEffect(() => {
+    console.log("📡 Cargando lista de pacientes...");
     fetch("/api/historico/pacientes")
       .then((r) => {
+        console.log("↪️ Response pacientes status:", r.status);
         if (!r.ok) throw new Error(`Status ${r.status}`);
         return r.json();
       })
-      .then((lista) => setPacientes(lista))
-      .catch((err) => console.error("Error al cargar pacientes:", err));
+      .then((lista: string[]) => {
+        console.log("✅ Pacientes recibidos:", lista);
+        setPacientes(lista);
+      })
+      .catch((err) => console.error("❌ Error al cargar pacientes:", err));
   }, []);
 
   const handleFetch = async () => {
+    console.log("📡 Iniciando fetch de histórico...");
+    console.log(
+      "   paciente:",
+      pacienteId,
+      "start:",
+      startDate,
+      "end:",
+      endDate
+    );
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/historico?paciente=${encodeURIComponent(
-          pacienteId
-        )}&start=${startDate}&end=${endDate}`
-      );
+      const url = `/api/historico?paciente=${encodeURIComponent(
+        pacienteId
+      )}&start=${startDate}&end=${endDate}`;
+      console.log("   URL fetch histórico:", url);
+      const res = await fetch(url);
+      console.log("↪️ Response histórico status:", res.status);
       if (!res.ok) throw new Error(`Status ${res.status}`);
       const json: HistoricResponse = await res.json();
+      console.log("✅ Datos históricos recibidos:", json.datos);
       setData(json.datos);
     } catch (err) {
-      console.error("Error fetching historic data:", err);
+      console.error("❌ Error fetching historic data:", err);
     } finally {
       setLoading(false);
+      console.log("📌 handleFetch finalizado");
     }
   };
 
@@ -48,22 +65,31 @@ const HistoricDataView: React.FC = () => {
     const url = `/api/historico/edf?paciente=${encodeURIComponent(
       pacienteId
     )}&start=${startDate}&end=${endDate}`;
+    console.log("📡 Iniciando descarga EDF desde:", url);
+
     fetch(url)
       .then((res) => {
+        console.log("↪️ Response EDF status:", res.status);
         if (!res.ok) throw new Error(`Status ${res.status}`);
         return res.blob();
       })
       .then((blob) => {
-        const link = document.createElement("a");
+        console.log("✅ Blob EDF recibido, tamaño:", blob.size);
         const filename = `${pacienteId}_${startDate.replace(
           /-/g,
           ""
         )}-${endDate.replace(/-/g, "")}.edf`;
-        link.href = window.URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        const href = window.URL.createObjectURL(blob);
+        link.href = href;
         link.download = filename;
+        document.body.appendChild(link);
         link.click();
+        link.remove();
+        window.URL.revokeObjectURL(href);
+        console.log("📥 Descarga disparada con filename:", filename);
       })
-      .catch((err) => console.error("Error downloading EDF:", err));
+      .catch((err) => console.error("❌ Error downloading EDF:", err));
   };
 
   // Cálculo del ancho dinámico para scroll horizontal
