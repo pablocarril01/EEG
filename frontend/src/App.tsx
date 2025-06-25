@@ -19,7 +19,7 @@ type DatosResult = {
 } | null;
 
 const App: React.FC = () => {
-  // -------------- ESTADOS DE APP ----------------
+  // ----- Estados de datos y control -----
   const [usuarioId, setUsuarioId] = useState<string>("Pablo");
   const [chartData, setChartData] = useState<number[][]>([
     [0, 0, 0, 0, 0, 0, 0, 0],
@@ -28,15 +28,20 @@ const App: React.FC = () => {
   const [estado, setEstado] = useState<AppState>("INICIAL");
   const [cicloCeros, setCicloCeros] = useState<number>(0);
 
-  // controla si mostramos selector de live o la vista historic-data
-  const [mostrarSelector, setMostrarSelector] = useState<boolean>(true);
-  // modo “live” vs “historic”
-  const [viewMode, setViewMode] = useState<"live" | "historic">("live");
+  // Control de vista: selector, live o histórico
+  const [viewMode, setViewMode] = useState<"selector" | "live" | "historic">(
+    "selector"
+  );
 
   const previousData = useRef<number[][]>([[0, 0, 0, 0, 0, 0, 0, 0]]);
 
-  // … el resto de funciones de live (fetchFromBackend, iniciarConDatos, manejarFinAnimacion, etc) …
+  useEffect(() => {
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
 
+  // ----- Funciones de fetch -----
   const fetchFromBackend = (): Promise<DatosResult> =>
     new Promise((resolve) => {
       socket.emit("solicitarDatos", { proyectoId: "PEPI", usuarioId });
@@ -53,8 +58,8 @@ const App: React.FC = () => {
       });
     });
 
+  // ----- Live mode -----
   const iniciarConDatos = async () => {
-    setMostrarSelector(false);
     setViewMode("live");
     setEstado("COMPROBANDO_SENSOR");
 
@@ -66,61 +71,53 @@ const App: React.FC = () => {
       setTimeout(async () => {
         const comprobacion = await fetchFromBackend();
         if (comprobacion) {
-          if (isDataDifferent(comprobacion.datos, previousData.current)) {
-            setChartData(comprobacion.datos);
-            previousData.current = comprobacion.datos;
-            setComentarios(comprobacion.comentarios);
-            setEstado("MOSTRANDO_DATOS");
-          } else {
-            setChartData(comprobacion.datos);
-            setEstado("MOSTRANDO_CEROS");
-            setCicloCeros((prev) => prev + 1);
-          }
+          const distinto = isDataDifferent(
+            comprobacion.datos,
+            previousData.current
+          );
+          setChartData(comprobacion.datos);
+          setComentarios(comprobacion.comentarios);
+          setEstado(distinto ? "MOSTRANDO_DATOS" : "MOSTRANDO_CEROS");
+          if (!distinto) setCicloCeros((c) => c + 1);
+          previousData.current = comprobacion.datos;
         }
       }, TIEMPO_ACTUALIZACION);
     }
   };
 
+  // ----- Histórico mode -----
   const verHistorico = () => {
-    setMostrarSelector(false);
     setViewMode("historic");
   };
 
+  // ----- Reset a estado inicial -----
   const detener = () => {
-    // vuelve al estado inicial de la app
+    setViewMode("selector");
     setEstado("INICIAL");
-    setMostrarSelector(true);
-    setViewMode("live");
     setChartData([[0, 0, 0, 0, 0, 0, 0, 0]]);
     setComentarios([]);
     setCicloCeros(0);
     previousData.current = [[0, 0, 0, 0, 0, 0, 0, 0]];
   };
 
+  // Compara solo los últimos 15 puntos de cada canal
   const isDataDifferent = (a: number[][], b: number[][]) => {
     if (a.length !== b.length) return true;
     for (let i = 0; i < a.length; i++) {
-      const aSlice = a[i].slice(-15);
-      const bSlice = b[i].slice(-15);
-      if (aSlice.length !== bSlice.length) return true;
-      for (let j = 0; j < aSlice.length; j++) {
-        if (aSlice[j] !== bSlice[j]) return true;
+      const as = a[i].slice(-15),
+        bs = b[i].slice(-15);
+      if (as.length !== bs.length) return true;
+      for (let j = 0; j < as.length; j++) {
+        if (as[j] !== bs[j]) return true;
       }
     }
     return false;
   };
 
-  useEffect(() => {
-    return () => {
-      socket.disconnect();
-    };
-  }, []);
-
-  // ---------------- RENDER ----------------
+  // ----- Render -----
   return (
     <div className="app-container">
-      {/* ===== VISTA LIVE - SELECTOR INICIAL ===== */}
-      {mostrarSelector && viewMode === "live" && (
+      {viewMode === "selector" && (
         <div className="selector-container">
           <img src="/PEPI.png" alt="Logo PEPI" className="logo-cima" />
           <div className="selector-row">
@@ -159,46 +156,26 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* ===== VISTA LIVE - CHART EN TIEMPO REAL ===== */}
-      {!mostrarSelector && viewMode === "live" && (
+      {viewMode === "live" && (
         <>
-          <div
-            className="estado-layout"
-            style={{
-              width: "100%",
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr 1fr",
-              gridTemplateRows: "auto auto",
-              alignItems: "center",
-              textAlign: "center",
-              marginBottom: "0rem",
-            }}
+          <button
+            className="btn btn-link"
+            onClick={detener}
+            style={{ margin: "1rem", color: "#dc3545" }}
           >
-            <div
-              style={{
-                justifySelf: "start",
-                fontSize: "0.88rem",
-                fontWeight: "normal",
-              }}
-            >
-              Paciente: {usuarioId}
-            </div>
+            ← Volver al inicio
+          </button>
+
+          <div className="estado-layout">
+            <div style={{ justifySelf: "start" }}>Paciente: {usuarioId}</div>
             <div>
-              <p style={{ color: "white", fontSize: "0.88rem", margin: 0 }}>
+              <p className="info-text">
                 PEPI v1.0 de 8 canales. 10 segundos / barrido, 500 Hz
               </p>
             </div>
-            <button
-              className="btn btn-stop"
-              onClick={detener}
-              style={{
-                justifySelf: "end",
-                marginRight: "2.2rem",
-                width: "auto",
-              }}
-            >
-              Volver al inicio
-            </button>
+            <div style={{ justifySelf: "end" }}>
+              <p className="info-text">Estado: {estado}</p>
+            </div>
           </div>
 
           {(estado === "MOSTRANDO_DATOS" || estado === "MOSTRANDO_CEROS") && (
@@ -207,16 +184,11 @@ const App: React.FC = () => {
                 data={chartData}
                 isAnimating={true}
                 usuarioId={usuarioId}
-                onAnimationEnd={async () => {
-                  // tu lógica de recarga aquí…
-                }}
+                onAnimationEnd={async () => {}}
                 shouldZero={estado === "MOSTRANDO_CEROS"}
                 animationDuration={TIEMPO_ACTUALIZACION}
                 cicloCeros={cicloCeros}
               />
-              {estado === "MOSTRANDO_CEROS" && (
-                <div className="ciclo-ceros">Ciclos de cero: {cicloCeros}</div>
-              )}
             </div>
           )}
 
@@ -239,11 +211,10 @@ const App: React.FC = () => {
         </>
       )}
 
-      {/* ===== VISTA HISTÓRICO ===== */}
       {viewMode === "historic" && (
         <>
           <button
-            className="btn btn-link"
+            className="btn btn-primary"
             onClick={detener}
             style={{ margin: "1rem" }}
           >
