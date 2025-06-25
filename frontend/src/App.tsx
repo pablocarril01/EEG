@@ -268,8 +268,12 @@ const App: React.FC = () => {
       {/* Vista histórico */}
       {viewMode === "historic" && (
         <>
-          <button className="btn btn-stop" onClick={detener}>
-            Volver
+          <button
+            className="btn btn-primary"
+            onClick={detener}
+            style={{ margin: "1rem" }}
+          >
+            ← Volver al inicio
           </button>
           <HistoricDataView />
         </>
