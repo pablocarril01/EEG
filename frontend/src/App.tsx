@@ -180,6 +180,11 @@ const App: React.FC = () => {
               className="btn btn-secondary"
               onClick={verHistorico}
               disabled={!usuarioId}
+              style={{
+                backgroundColor: "#d97706",
+                borderColor: "#d97706",
+                color: "#fff",
+              }}
             >
               Ver Histórico
             </button>
