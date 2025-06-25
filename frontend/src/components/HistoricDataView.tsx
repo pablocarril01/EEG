@@ -1,6 +1,6 @@
 // src/components/HistoricDataView.tsx
 import React, { useState, useEffect } from "react";
-import ChartComponent from "./ChartComponent";
+import GraficoEstatico from "./GraficoEstatico";
 import "./HistoricDataView.css";
 
 type HistoricResponse = {
@@ -92,9 +92,6 @@ const HistoricDataView: React.FC = () => {
       .catch((err) => console.error("❌ Error downloading EDF:", err));
   };
 
-  // Cálculo del ancho dinámico para scroll horizontal
-  const chartWidth = Math.max((data[0]?.length || 500) * 2, 500);
-
   return (
     <div className="historic-view">
       <div className="historic-controls">
@@ -139,20 +136,14 @@ const HistoricDataView: React.FC = () => {
       </div>
 
       <div className="historic-chart-wrapper">
-        <div
-          className="historic-chart-inner"
-          style={{ width: `${chartWidth}px` }}
-        >
-          {data.length > 0 && (
-            <ChartComponent
-              data={data}
-              isAnimating={false}
-              usuarioId={pacienteId}
-              shouldZero={false}
-              animationDuration={1}
-            />
-          )}
-        </div>
+        {data.length > 0 && (
+          <GraficoEstatico
+            data={data}
+            channelLabels={["FP1", "FP2", "T3", "T4", "O1", "O2", "C3", "C4"]}
+            pixelsPerSample={2}
+            heightPerChannel={100}
+          />
+        )}
       </div>
     </div>
   );
