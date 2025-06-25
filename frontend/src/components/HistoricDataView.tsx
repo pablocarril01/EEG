@@ -50,8 +50,16 @@ const HistoricDataView: React.FC = () => {
       console.log("↪️ Response histórico status:", res.status);
       if (!res.ok) throw new Error(`Status ${res.status}`);
       const json: HistoricResponse = await res.json();
-      console.log("✅ Datos históricos recibidos:", json.datos);
-      setData(json.datos);
+      console.log("✅ Datos históricos recibidos (filas×canales):", json.datos);
+      // Transponer: de [samples][channels] a [channels][samples]
+      const filas = json.datos;
+      const nChannels = filas[0]?.length || 0;
+      const transposed: number[][] = Array.from(
+        { length: nChannels },
+        (_, chIdx) => filas.map((fila) => fila[chIdx])
+      );
+      console.log("🔀 Datos transpuestos (canales×samples):", transposed);
+      setData(transposed);
     } catch (err) {
       console.error("❌ Error fetching historic data:", err);
       setData([]); // limpiar datos
