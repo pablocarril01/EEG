@@ -26,22 +26,29 @@ const GraficoEstatico: React.FC<GraficoEstaticoProps> = ({
     const width = samples * pixelsPerSample;
     const height = data.length * heightPerChannel;
 
-    console.log(`📐 Canvas size: ${width}×${height} px; samples=${samples}`);
+    console.log(
+      `📐 Canvas size: ${width}×${height}px; samples por canal=${samples}`
+    );
 
     // Ajusta el tamaño real
     canvas.width = width;
     canvas.height = height;
 
-    // Dibuja un borde rojo para verlo
-    ctx.strokeStyle = "red";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(0, 0, width, height);
-
-    // Fondo blanco
-    ctx.fillStyle = "#fff";
+    // 1) Fondo gris claro
+    ctx.fillStyle = "#eee";
     ctx.fillRect(0, 0, width, height);
 
+    // 2) Dibujar rectángulo de prueba (50×50) para comprobar que se ve algo
+    ctx.fillStyle = "red";
+    ctx.fillRect(10, 10, 50, 50);
+
     data.forEach((channel, chIdx) => {
+      console.log(
+        `🔎 Canal ${chIdx}: length=${channel.length}, min=${Math.min(
+          ...channel
+        )}, max=${Math.max(...channel)}`
+      );
+
       const yTop = chIdx * heightPerChannel;
       const midY = yTop + heightPerChannel / 2;
 
@@ -86,17 +93,11 @@ const GraficoEstatico: React.FC<GraficoEstaticoProps> = ({
         width: "100%",
         overflowX: "auto",
         overflowY: "hidden",
-        border: "1px solid #333", // para ver el contenedor
-        height: `${data.length * heightPerChannel}px`, // asegura altura
+        border: "1px solid #333",
+        height: `${data.length * heightPerChannel}px`,
       }}
     >
-      <canvas
-        ref={canvasRef}
-        style={{
-          display: "block",
-          background: "#eee",
-        }}
-      />
+      <canvas ref={canvasRef} style={{ display: "block" }} />
     </div>
   );
 };
