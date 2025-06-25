@@ -11,6 +11,9 @@ import {
 
 @Injectable()
 export class AppService {
+  getHello(): string {
+    return 'Hello World!';
+  }
   // Para mantener el historial de los últimos 50 puntos en la UI
   private previousData: number[][] = [];
 
