@@ -20,6 +20,7 @@
   overflow-x: auto;
   overflow-y: hidden;
   background: #000;
+  height: 800px;
 }
 
 .historic-chart-inner {

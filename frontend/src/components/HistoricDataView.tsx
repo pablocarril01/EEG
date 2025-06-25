@@ -15,7 +15,6 @@ const HistoricDataView: React.FC = () => {
   const [data, setData] = useState<number[][]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
-  // Carga la lista de pacientes
   useEffect(() => {
     console.log("📡 Cargando lista de pacientes...");
     fetch("/api/historico/pacientes")
@@ -55,6 +54,7 @@ const HistoricDataView: React.FC = () => {
       setData(json.datos);
     } catch (err) {
       console.error("❌ Error fetching historic data:", err);
+      setData([]); // limpiar datos
     } finally {
       setLoading(false);
       console.log("📌 handleFetch finalizado");
@@ -136,13 +136,19 @@ const HistoricDataView: React.FC = () => {
       </div>
 
       <div className="historic-chart-wrapper">
-        {data.length > 0 && (
+        {data.length > 0 ? (
           <GraficoEstatico
             data={data}
             channelLabels={["FP1", "FP2", "T3", "T4", "O1", "O2", "C3", "C4"]}
             pixelsPerSample={2}
             heightPerChannel={100}
           />
+        ) : (
+          <p style={{ textAlign: "center", marginTop: "2rem", color: "#666" }}>
+            {loading
+              ? "Cargando gráfico..."
+              : 'Selecciona paciente y fechas y pulsa "Mostrar Datos"'}
+          </p>
         )}
       </div>
     </div>
