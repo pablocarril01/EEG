@@ -17,6 +17,7 @@ const GraficoEstatico: React.FC<GraficoEstaticoProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
+    console.log("🎨 GraficoEstatico useEffect, data.length=", data.length);
     if (!data || data.length === 0) return;
 
     const canvas = canvasRef.current!;
@@ -25,8 +26,16 @@ const GraficoEstatico: React.FC<GraficoEstaticoProps> = ({
     const width = samples * pixelsPerSample;
     const height = data.length * heightPerChannel;
 
+    console.log(`📐 Canvas size: ${width}×${height} px; samples=${samples}`);
+
+    // Ajusta el tamaño real
     canvas.width = width;
     canvas.height = height;
+
+    // Dibuja un borde rojo para verlo
+    ctx.strokeStyle = "red";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(0, 0, width, height);
 
     // Fondo blanco
     ctx.fillStyle = "#fff";
@@ -59,7 +68,6 @@ const GraficoEstatico: React.FC<GraficoEstaticoProps> = ({
       ctx.beginPath();
       channel.forEach((v, i) => {
         const x = i * pixelsPerSample;
-        // mapea v a espacio vertical entre yTop+5 y yTop+heightPerChannel-5
         const y =
           yTop +
           heightPerChannel -
@@ -73,8 +81,22 @@ const GraficoEstatico: React.FC<GraficoEstaticoProps> = ({
   }, [data, pixelsPerSample, heightPerChannel, channelLabels]);
 
   return (
-    <div style={{ width: "100%", overflowX: "auto", overflowY: "hidden" }}>
-      <canvas ref={canvasRef} style={{ display: "block" }} />
+    <div
+      style={{
+        width: "100%",
+        overflowX: "auto",
+        overflowY: "hidden",
+        border: "1px solid #333", // para ver el contenedor
+        height: `${data.length * heightPerChannel}px`, // asegura altura
+      }}
+    >
+      <canvas
+        ref={canvasRef}
+        style={{
+          display: "block",
+          background: "#eee",
+        }}
+      />
     </div>
   );
 };
