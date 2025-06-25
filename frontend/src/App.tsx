@@ -19,7 +19,6 @@ type DatosResult = {
 } | null;
 
 const App: React.FC = () => {
-  // -------------- ESTADOS DE APP ----------------
   const [usuarioId, setUsuarioId] = useState<string>("Pablo");
   const [chartData, setChartData] = useState<number[][]>([
     [0, 0, 0, 0, 0, 0, 0, 0],
@@ -27,15 +26,24 @@ const App: React.FC = () => {
   const [comentarios, setComentarios] = useState<string[]>([]);
   const [estado, setEstado] = useState<AppState>("INICIAL");
   const [cicloCeros, setCicloCeros] = useState<number>(0);
-
-  // controla si mostramos selector de live o la vista historic-data
   const [mostrarSelector, setMostrarSelector] = useState<boolean>(true);
-  // modo “live” vs “historic”
   const [viewMode, setViewMode] = useState<"live" | "historic">("live");
 
   const previousData = useRef<number[][]>([[0, 0, 0, 0, 0, 0, 0, 0]]);
 
-  // … el resto de funciones de live (fetchFromBackend, iniciarConDatos, manejarFinAnimacion, etc) …
+  const isDataDifferent = (a: number[][], b: number[][]) => {
+    if (a.length !== b.length) return true;
+    for (let i = 0; i < a.length; i++) {
+      if (!a[i] || !b[i]) return true;
+      const aSlice = a[i].slice(-15);
+      const bSlice = b[i].slice(-15);
+      if (aSlice.length !== bSlice.length) return true;
+      for (let j = 0; j < aSlice.length; j++) {
+        if (aSlice[j] !== bSlice[j]) return true;
+      }
+    }
+    return false;
+  };
 
   const fetchFromBackend = (): Promise<DatosResult> =>
     new Promise((resolve) => {
@@ -77,7 +85,7 @@ const App: React.FC = () => {
             setCicloCeros((prev) => prev + 1);
           }
         }
-      }, TIEMPO_ACTUALIZACION);
+      }, 1500);
     }
   };
 
@@ -86,28 +94,49 @@ const App: React.FC = () => {
     setViewMode("historic");
   };
 
+  const manejarFinAnimacion = async () => {
+    if (estado === "MOSTRANDO_DATOS") {
+      const result = await fetchFromBackend();
+      if (result) {
+        if (isDataDifferent(result.datos, previousData.current)) {
+          setChartData(result.datos);
+          previousData.current = result.datos;
+          setComentarios(result.comentarios);
+        } else {
+          setEstado("MOSTRANDO_CEROS");
+          setCicloCeros((prev) => prev + 1);
+        }
+      }
+    } else if (estado === "MOSTRANDO_CEROS") {
+      setCicloCeros((prev) => prev + 1);
+    }
+  };
+
+  useEffect(() => {
+    let pollingInterval: NodeJS.Timeout | null = null;
+
+    if (estado === "MOSTRANDO_CEROS") {
+      pollingInterval = setInterval(async () => {
+        const result = await fetchFromBackend();
+        if (result && isDataDifferent(result.datos, previousData.current)) {
+          clearInterval(pollingInterval!);
+          setChartData(result.datos);
+          previousData.current = result.datos;
+          setComentarios(result.comentarios);
+          setEstado("MOSTRANDO_DATOS");
+        }
+      }, 1000);
+    }
+
+    return () => {
+      if (pollingInterval) clearInterval(pollingInterval);
+    };
+  }, [estado]);
+
   const detener = () => {
-    // vuelve al estado inicial de la app
     setEstado("INICIAL");
     setMostrarSelector(true);
     setViewMode("live");
-    setChartData([[0, 0, 0, 0, 0, 0, 0, 0]]);
-    setComentarios([]);
-    setCicloCeros(0);
-    previousData.current = [[0, 0, 0, 0, 0, 0, 0, 0]];
-  };
-
-  const isDataDifferent = (a: number[][], b: number[][]) => {
-    if (a.length !== b.length) return true;
-    for (let i = 0; i < a.length; i++) {
-      const aSlice = a[i].slice(-15);
-      const bSlice = b[i].slice(-15);
-      if (aSlice.length !== bSlice.length) return true;
-      for (let j = 0; j < aSlice.length; j++) {
-        if (aSlice[j] !== bSlice[j]) return true;
-      }
-    }
-    return false;
   };
 
   useEffect(() => {
@@ -116,10 +145,9 @@ const App: React.FC = () => {
     };
   }, []);
 
-  // ---------------- RENDER ----------------
   return (
     <div className="app-container">
-      {/* ===== VISTA LIVE - SELECTOR INICIAL ===== */}
+      {/* Selector inicial: paciente y acciones */}
       {mostrarSelector && viewMode === "live" && (
         <div className="selector-container">
           <img src="/PEPI.png" alt="Logo PEPI" className="logo-cima" />
@@ -159,7 +187,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* ===== VISTA LIVE - CHART EN TIEMPO REAL ===== */}
+      {/* Vista en vivo */}
       {!mostrarSelector && viewMode === "live" && (
         <>
           <div
@@ -197,7 +225,7 @@ const App: React.FC = () => {
                 width: "auto",
               }}
             >
-              Volver al inicio
+              Volver
             </button>
           </div>
 
@@ -207,9 +235,7 @@ const App: React.FC = () => {
                 data={chartData}
                 isAnimating={true}
                 usuarioId={usuarioId}
-                onAnimationEnd={async () => {
-                  // tu lógica de recarga aquí…
-                }}
+                onAnimationEnd={manejarFinAnimacion}
                 shouldZero={estado === "MOSTRANDO_CEROS"}
                 animationDuration={TIEMPO_ACTUALIZACION}
                 cicloCeros={cicloCeros}
@@ -239,15 +265,11 @@ const App: React.FC = () => {
         </>
       )}
 
-      {/* ===== VISTA HISTÓRICO ===== */}
+      {/* Vista histórico */}
       {viewMode === "historic" && (
         <>
-          <button
-            className="btn btn-link"
-            onClick={detener}
-            style={{ margin: "1rem" }}
-          >
-            ← Volver al inicio
+          <button className="btn btn-stop" onClick={detener}>
+            Volver
           </button>
           <HistoricDataView />
         </>
