@@ -131,6 +131,11 @@ const HistoricDataView: React.FC = () => {
           onClick={handleFetch}
           disabled={!pacienteId || !startDate || !endDate || loading}
           className="btn btn-primary"
+          style={{
+            backgroundColor: "#d97706",
+            borderColor: "#d97706",
+            color: "#fff",
+          }}
         >
           {loading ? "Cargando..." : "Mostrar Datos"}
         </button>
@@ -138,6 +143,11 @@ const HistoricDataView: React.FC = () => {
           onClick={handleDownload}
           disabled={!data.length}
           className="btn btn-secondary"
+          style={{
+            backgroundColor: "#d97706",
+            borderColor: "#d97706",
+            color: "#fff",
+          }}
         >
           Descargar EDF
         </button>
