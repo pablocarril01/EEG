@@ -13,4 +13,9 @@ export class AppController {
     console.log('✅ Entró en getHexValues controlador');
     return await this.appService.getProyectoInfo(proyectoId, usuarioId);
   }
+  @Get()
+  getHello(): string {
+    // <— MÉTODO RESTAURADO
+    return this.appService.getHello();
+  }
 }
