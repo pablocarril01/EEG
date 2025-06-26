@@ -71,7 +71,7 @@ router.get('/edf', async (req: Request, res: Response) => {
   }
 
   try {
-    const scriptPath = path.resolve(__dirname, '../../scripts/generar-edf.py');
+    const scriptPath = path.resolve(__dirname, '../../scripts/postgres-edf.py');
     const py = spawn('python3', [
       scriptPath,
       '--paciente',
