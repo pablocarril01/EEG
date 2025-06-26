@@ -26,7 +26,7 @@ conn = psycopg2.connect(
 cur = conn.cursor()
 cur.execute("""
     SELECT timestamp, canal1, canal2, canal3
-    FROM mediciones
+    FROM pepi
     WHERE paciente_id = %s
       AND timestamp BETWEEN %s AND %s
     ORDER BY timestamp
