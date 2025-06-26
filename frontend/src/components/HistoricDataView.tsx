@@ -69,35 +69,40 @@ const HistoricDataView: React.FC = () => {
     }
   };
 
-  const handleDownload = () => {
-    const url = `/api/historico/edf?paciente=${encodeURIComponent(
-      pacienteId
-    )}&start=${startDate}&end=${endDate}`;
-    console.log("📡 Iniciando descarga EDF desde:", url);
-
-    fetch(url)
-      .then((res) => {
-        console.log("↪️ Response EDF status:", res.status);
-        if (!res.ok) throw new Error(`Status ${res.status}`);
-        return res.blob();
-      })
-      .then((blob) => {
-        console.log("✅ Blob EDF recibido, tamaño:", blob.size);
-        const filename = `${pacienteId}_${startDate.replace(
-          /-/g,
-          ""
-        )}-${endDate.replace(/-/g, "")}.edf`;
-        const link = document.createElement("a");
-        const href = window.URL.createObjectURL(blob);
-        link.href = href;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        window.URL.revokeObjectURL(href);
-        console.log("📥 Descarga disparada con filename:", filename);
-      })
-      .catch((err) => console.error("❌ Error downloading EDF:", err));
+  const handleDownload = async () => {
+    if (!pacienteId || !startDate || !endDate) return;
+    setLoading(true);
+    try {
+      const url = `/api/historico/edf?paciente=${encodeURIComponent(
+        pacienteId
+      )}&start=${encodeURIComponent(startDate)}&end=${encodeURIComponent(
+        endDate
+      )}`;
+      const res = await fetch(url);
+      if (!res.ok) {
+        const text = await res.text();
+        console.error("❌ Error EDF:", res.status, text);
+        alert(`Error al generar EDF: ${res.status}\n${text}`);
+        return;
+      }
+      const blob = await res.blob();
+      const filename = `${pacienteId}_${startDate.replace(
+        /-/g,
+        ""
+      )}-${endDate.replace(/-/g, "")}.edf`;
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(link.href);
+    } catch (err) {
+      console.error("❌ Exception downloading EDF:", err);
+      alert(`Error de red o de servidor: ${err}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
