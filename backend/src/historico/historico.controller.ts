@@ -1,5 +1,3 @@
-// File: src/historico/historico.controller.ts
-
 import {
   Controller,
   Get,
@@ -25,6 +23,7 @@ export class HistoricoController {
     @Query('end') end: string,
     @Res() res: Response,
   ) {
+    // Validación de parámetros
     if (!paciente || !start || !end) {
       throw new BadRequestException(
         'Parámetros inválidos. Usa /api/historico/edf?paciente=XXX&start=YYYY-MM-DD&end=YYYY-MM-DD',
@@ -49,6 +48,13 @@ export class HistoricoController {
         .json({ error: 'Python virtualenv no encontrado' });
     }
 
+    // Header para forzar descarga
+    const filename = `${paciente}_${start.replace(/-/g, '')}-${end.replace(/-/g, '')}.edf`;
+    res.set({
+      'Content-Type': 'application/octet-stream',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+    });
+
     // Lanza el script con el Python del venv
     const py = spawn(pythonBin, [scriptPath, paciente, start, end], {
       env: process.env,
@@ -56,15 +62,17 @@ export class HistoricoController {
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
-    // Captura fallos al arrancar el proceso
+    // Captura errores al arrancar el proceso
     py.on('error', (err) => {
       this.logger.error('Error arrancando Python', err);
-      return res
-        .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({
-          error: 'No se pudo ejecutar el script EDF',
-          details: err.message,
-        });
+      if (!res.headersSent) {
+        res
+          .status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .json({
+            error: 'No se pudo ejecutar el script EDF',
+            details: err.message,
+          });
+      }
     });
 
     // Acumula stderr para diagnóstico
@@ -75,14 +83,7 @@ export class HistoricoController {
       this.logger.warn(`Python stderr: ${msg}`);
     });
 
-    // Prepara headers para la descarga
-    const filename = `${paciente}_${start.replace(/-/g, '')}-${end.replace(/-/g, '')}.edf`;
-    res.set({
-      'Content-Type': 'application/octet-stream',
-      'Content-Disposition': `attachment; filename="${filename}"`,
-    });
-
-    // Envía stdout directamente al cliente
+    // Stream stdout directamente al cliente
     py.stdout.pipe(res);
 
     // Al cerrar el proceso, comprueba el código de salida
