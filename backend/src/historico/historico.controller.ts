@@ -1,4 +1,5 @@
 // File: src/historico/historico.controller.ts
+
 import {
   Controller,
   Get,
@@ -30,60 +31,70 @@ export class HistoricoController {
       );
     }
 
+    // Ruta al script Python
     const scriptPath = path.join(process.cwd(), 'scripts', 'postgres-edf.py');
     if (!fs.existsSync(scriptPath)) {
-      this.logger.error(`No existe el script en ${scriptPath}`);
+      this.logger.error(`Script no encontrado en ${scriptPath}`);
       return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
         .json({ error: 'Script EDF no encontrado en el servidor' });
     }
 
-    // Arranca el proceso
-    const py = spawn('python3', [scriptPath, paciente, start, end], {
+    // Ejecutable Python dentro del virtualenv
+    const pythonBin = path.join(process.cwd(), 'venv', 'bin', 'python');
+    if (!fs.existsSync(pythonBin)) {
+      this.logger.error(`Python del virtualenv no encontrado en ${pythonBin}`);
+      return res
+        .status(HttpStatus.INTERNAL_SERVER_ERROR)
+        .json({ error: 'Python virtualenv no encontrado' });
+    }
+
+    // Lanza el script con el Python del venv
+    const py = spawn(pythonBin, [scriptPath, paciente, start, end], {
       env: process.env,
       cwd: path.dirname(scriptPath),
       stdio: ['ignore', 'pipe', 'pipe'],
     });
 
-    // Capturamos errores de spawn
+    // Captura fallos al arrancar el proceso
     py.on('error', (err) => {
       this.logger.error('Error arrancando Python', err);
-      res
+      return res
         .status(HttpStatus.INTERNAL_SERVER_ERROR)
-        .json({ error: 'No se pudo ejecutar el script EDF' });
+        .json({
+          error: 'No se pudo ejecutar el script EDF',
+          details: err.message,
+        });
     });
 
-    // Acumulamos stderr para diagnóstico
+    // Acumula stderr para diagnóstico
     let stderr = '';
     py.stderr.on('data', (chunk) => {
       const msg = chunk.toString();
       stderr += msg;
-      this.logger.warn(`python stderr: ${msg}`);
+      this.logger.warn(`Python stderr: ${msg}`);
     });
 
-    // Preparamos headers HTTP
+    // Prepara headers para la descarga
     const filename = `${paciente}_${start.replace(/-/g, '')}-${end.replace(/-/g, '')}.edf`;
     res.set({
       'Content-Type': 'application/octet-stream',
       'Content-Disposition': `attachment; filename="${filename}"`,
     });
 
-    // Pipe stdout al cliente
+    // Envía stdout directamente al cliente
     py.stdout.pipe(res);
 
+    // Al cerrar el proceso, comprueba el código de salida
     py.on('close', (code) => {
       if (code !== 0) {
         this.logger.error(
-          `Script EDF salió con código ${code}, stderr:\n${stderr}`,
+          `Script EDF finalizó con código ${code}\nStderr completo:\n${stderr}`,
         );
-        // Si ya hemos enviado headers, el cliente verá un cuerpo vacío, así que mejor cerrar
         if (!res.headersSent) {
           res
             .status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .json({
-              error: `Error generando EDF (exit code ${code})`,
-              details: stderr,
-            });
+            .json({ error: 'Error generando archivo EDF', details: stderr });
         }
       }
     });
