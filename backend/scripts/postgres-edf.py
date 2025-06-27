@@ -23,7 +23,7 @@ conn = psycopg2.connect(
 )
 cur = conn.cursor()
 cur.execute("""
-    SELECT ts, canal1, canal2, canal3
+    SELECT ts, fp1, fp2, t3, t4, o1, o2, c3, c4
       FROM pepi
      WHERE id_paciente = %s
        AND ts BETWEEN %s AND %s
