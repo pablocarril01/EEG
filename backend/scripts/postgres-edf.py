@@ -51,19 +51,16 @@ outfile = f"/tmp/{paciente}_{sys.argv[2]}_{sys.argv[3]}.edf"
 edf = pyedflib.EdfWriter(outfile, n_channels=n_channels, file_type=pyedflib.FILETYPE_EDFPLUS)
 
 # 4) Cabecera general
-# 4) Cabecera general, con todas las claves obligatorias
 edf.setHeader({
-    'technician':           '',                # quién graba
-    'recording_additional': '',                # comentarios de la grabación
-    'patientname':          '',                # nombre del paciente
-    'patientcode':          paciente,          # tu ID de paciente
-    'equipment':            '',                # equipo usado
-    'patient_additional':   '',                # comentarios del paciente
-    'admincode':            '',                # código administrativo
-    'startdate':            fecha_inicio.timetuple()[:6],
-    'sex':                  '',                # sexo del paciente
-    'birthdate':            '',                # fecha de nacimiento
-    'year':                 '',                # año de nacimiento
+    'technician':           '',               # quién graba
+    'recording_additional': '',               # notas de la grabación
+    'patientname':          '',               # nombre del paciente
+    'patientcode':          paciente,         # tu ID interno
+    'equipment':            '',               # equipo usado
+    'admincode':            '',               # código administrativo
+    'patient_additional':   '',               # notas del paciente
+    'startdate':            fecha_inicio,     # <-- datetime, no tuple
+    'birthdate':            ''                # <-- string vacía
 })
 
 
