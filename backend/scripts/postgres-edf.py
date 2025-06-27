@@ -61,6 +61,7 @@ edf.setHeader({
     'patient_additional':   '',                # comentarios del paciente
     'admincode':            '',                # código administrativo
     'startdate':            fecha_inicio.timetuple()[:6],
+    'sex':                  '',                # sexo del paciente
 })
 
 
