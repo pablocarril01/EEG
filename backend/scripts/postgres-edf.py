@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-import sys
-import os
+import sys, os
 from datetime import datetime, timedelta
 import psycopg2
 import pyedflib
@@ -10,54 +9,77 @@ if len(sys.argv) != 4:
     print("Uso: postgres-edf.py <paciente> <YYYY-MM-DD> <YYYY-MM-DD>", file=sys.stderr)
     sys.exit(1)
 
-paciente    = sys.argv[1]
+paciente     = sys.argv[1]
 fecha_inicio = datetime.fromisoformat(sys.argv[2])
-# incluir todo el día final
 fecha_fin    = datetime.fromisoformat(sys.argv[3]) + timedelta(hours=23, minutes=59, seconds=59)
 
-# Conexión a Postgres
+# 1) Conectar a Postgres y extraer datos de la tabla "pepi"
 conn = psycopg2.connect(
-    host=os.getenv('PG_HOST'),
-    port=os.getenv('PG_PORT'),
-    dbname=os.getenv('PG_DB'),
-    user=os.getenv('PG_USER'),
-    password=os.getenv('PG_PASSWORD')
+    host     = os.getenv('PG_HOST'),
+    port     = os.getenv('PG_PORT'),
+    dbname   = os.getenv('PG_DB'),
+    user     = os.getenv('PG_USER'),
+    password = os.getenv('PG_PASSWORD'),
 )
 cur = conn.cursor()
 cur.execute("""
-    SELECT timestamp, canal1, canal2, canal3
-    FROM pepi
-    WHERE paciente_id = %s
-      AND timestamp BETWEEN %s AND %s
-    ORDER BY timestamp
+    SELECT ts, canal1, canal2, canal3
+      FROM pepi
+     WHERE id_paciente = %s
+       AND ts BETWEEN %s AND %s
+     ORDER BY ts
 """, (paciente, fecha_inicio, fecha_fin))
 rows = cur.fetchall()
 cur.close()
 conn.close()
 
-# Crear EDF
-start_str = fecha_inicio.strftime('%Y%m%d')
-end_str   = fecha_fin.strftime('%Y%m%d')
-outfile = f"{paciente}_{start_str}-{end_str}.edf"
+if not rows:
+    print(f"No hay datos para id_paciente={paciente} en {sys.argv[2]}–{sys.argv[3]}", file=sys.stderr)
+    sys.exit(1)
 
-with pyedflib.EdfWriter(outfile, n_channels=3) as f:
-    channel_info = [
-        {'label': 'canal1', 'dimension': 'uV', 'sample_rate': 100},
-        {'label': 'canal2', 'dimension': 'uV', 'sample_rate': 100},
-        {'label': 'canal3', 'dimension': 'uV', 'sample_rate': 100},
-    ]
-    f.setSignalHeaders(channel_info)
+# 2) Prepara parámetros EDF
+n_channels  = 3
+sample_rate = 256  # ajusta a tu frecuencia real
+labels      = ['canal1', 'canal2', 'canal3']
+phys_min = [min(r[i+1] for r in rows) for i in range(n_channels)]
+phys_max = [max(r[i+1] for r in rows) for i in range(n_channels)]
+dig_min  = [-32768] * n_channels
+dig_max  = [ 32767] * n_channels
 
-    data = [ [] for _ in range(3) ]
-    for ts, c1, c2, c3 in rows:
-        data[0].append(c1)
-        data[1].append(c2)
-        data[2].append(c3)
-    f.writeSamples(data)
+# 3) Crea archivo EDF temporal
+outfile = f"/tmp/{paciente}_{sys.argv[2]}_{sys.argv[3]}.edf"
+edf = pyedflib.EdfWriter(outfile, n_channels=n_channels, file_type=pyedflib.FILETYPE_EDFPLUS)
 
-# Emitir EDF por stdout
+# 4) Cabecera general
+edf.setHeader({
+    'patientcode': paciente,
+    'startdate':   fecha_inicio.timetuple()[:6],
+})
+
+# 5) Cabeceras por señal
+signal_headers = []
+for i in range(n_channels):
+    signal_headers.append({
+        'label':        labels[i],
+        'dimension':    'uV',
+        'sample_rate':  sample_rate,
+        'physical_min': phys_min[i],
+        'physical_max': phys_max[i],
+        'digital_min':  dig_min[i],
+        'digital_max':  dig_max[i],
+        'transducer':   '',
+        'prefilter':    '',
+    })
+edf.setSignalHeaders(signal_headers)
+
+# 6) Prepara array de muestras
+data = [[float(r[i+1]) for r in rows] for i in range(n_channels)]
+
+# 7) Escribe muestras y cierra
+edf.writeSamples(data)
+edf.close()
+
+# 8) Emite por stdout y limpia
 with open(outfile, 'rb') as f:
     sys.stdout.buffer.write(f.read())
-
-# Borrar fichero temporal
 os.remove(outfile)
