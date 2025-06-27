@@ -52,12 +52,13 @@ edf = pyedflib.EdfWriter(outfile, n_channels=n_channels, file_type=pyedflib.FILE
 
 # 4) Cabecera general
 edf.setHeader({
-    'technician':            '',                # nombre de quien graba (puede ir vacío)
-    'recording_additional':  '',                # comentarios adicionales
-    'patientname':           '',                # nombre del paciente
-    'patientcode':           paciente,          # tu código/ID de paciente
-    'equipment':             '',                # equipo usado
-    'startdate':             fecha_inicio.timetuple()[:6],
+    'technician':           '',                # quien graba (puede quedar vacío)
+    'patientname':          '',                # nombre del paciente
+    'patientcode':          paciente,          # ID o código de paciente
+    'equipment':            '',                # descripción del equipo
+    'recording_additional': '',                # comentarios adicionales de la grabación
+    'patient_additional':   '',                # comentarios adicionales del paciente
+    'startdate':            fecha_inicio.timetuple()[:6],
 })
 
 # 5) Cabeceras por señal
