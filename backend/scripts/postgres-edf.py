@@ -52,15 +52,16 @@ edf = pyedflib.EdfWriter(outfile, n_channels=n_channels, file_type=pyedflib.FILE
 
 # 4) Cabecera general
 edf.setHeader({
-    'technician':           '',               # quién graba
-    'recording_additional': '',               # notas de la grabación
-    'patientname':          '',               # nombre del paciente
-    'patientcode':          paciente,         # tu ID interno
-    'equipment':            '',               # equipo usado
-    'admincode':            '',               # código administrativo
-    'patient_additional':   '',               # notas del paciente
-    'startdate':            fecha_inicio,     # <-- datetime, no tuple
-    'birthdate':            ''                # <-- string vacía
+    'technician':           '',             # quién graba
+    'recording_additional': '',             # notas de la grabación
+    'patientname':          '',             # nombre del paciente
+    'patientcode':          paciente,       # tu ID interno de paciente
+    'equipment':            '',             # equipo usado
+    'admincode':            '',             # código administrativo o de estudio
+    'patient_additional':   '',             # notas del paciente
+    'startdate':            fecha_inicio,   # debe ser un datetime, no tuple
+    'birthdate':            '',             # fecha de nacimiento (YYYY-MM-DD o vacío)
+    'sex':                  '',             # 'M', 'F', 'X' o cadena vacía
 })
 
 
