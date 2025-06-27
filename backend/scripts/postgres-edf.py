@@ -69,16 +69,17 @@ edf.setHeader({
 signal_headers = []
 for i in range(n_channels):
     signal_headers.append({
-        'label':        labels[i],
-        'dimension':    'uV',
-        'sample_rate':  sample_rate,
-        'physical_min': phys_min[i],
-        'physical_max': phys_max[i],
-        'digital_min':  dig_min[i],
-        'digital_max':  dig_max[i],
-        'transducer':   '',
-        'prefilter':    '',
+        'label':            labels[i],
+        'dimension':        'uV',
+        'sample_frequency': sample_rate,
+        'physical_min':     phys_min[i],
+        'physical_max':     phys_max[i],
+        'digital_min':      dig_min[i],
+        'digital_max':      dig_max[i],
+        'transducer':       '',
+        'prefilter':        ''
     })
+
 edf.setSignalHeaders(signal_headers)
 
 # 6) Prepara array de muestras
