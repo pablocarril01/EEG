@@ -70,36 +70,43 @@ const HistoricDataView: React.FC = () => {
   };
 
   const handleDownload = async () => {
-    if (!pacienteId || !startDate || !endDate) return;
+    if (!pacienteId || !startDate || !endDate) {
+      alert("Por favor, selecciona paciente y rango de fechas");
+      return;
+    }
+
     setLoading(true);
     try {
-      const url = `/api/historico/edf?paciente=${encodeURIComponent(
-        pacienteId
-      )}&start=${encodeURIComponent(startDate)}&end=${encodeURIComponent(
-        endDate
-      )}`;
-      const res = await fetch(url);
+      const params = new URLSearchParams({
+        paciente: pacienteId,
+        desde: startDate,
+        hasta: endDate,
+      }).toString();
+
+      const res = await fetch(`/api/edf?${params}`, {
+        method: "GET",
+      });
+
       if (!res.ok) {
-        const text = await res.text();
-        console.error("❌ Error EDF:", res.status, text);
-        alert(`Error al generar EDF: ${res.status}\n${text}`);
-        return;
+        throw new Error(`Error ${res.status}: no se pudo generar el EDF`);
       }
+
       const blob = await res.blob();
       const filename = `${pacienteId}_${startDate.replace(
         /-/g,
         ""
       )}-${endDate.replace(/-/g, "")}.edf`;
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
-      URL.revokeObjectURL(link.href);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
     } catch (err) {
-      console.error("❌ Exception downloading EDF:", err);
-      alert(`Error de red o de servidor: ${err}`);
+      console.error(err);
+      alert("No se pudo descargar el EDF. Inténtalo de nuevo.");
     } finally {
       setLoading(false);
     }
@@ -146,7 +153,7 @@ const HistoricDataView: React.FC = () => {
         </button>
         <button
           onClick={handleDownload}
-          disabled={!data.length}
+          disabled={loading}
           className="btn btn-secondary"
           style={{
             backgroundColor: "#d97706",
@@ -154,7 +161,7 @@ const HistoricDataView: React.FC = () => {
             color: "#fff",
           }}
         >
-          Descargar EDF
+          {loading ? "Generando..." : "Descargar EDF"}
         </button>
       </div>
 

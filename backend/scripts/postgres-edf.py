@@ -21,7 +21,7 @@ conn = psycopg2.connect(
     port=os.getenv('PG_PORT'),
     dbname=os.getenv('PG_DB'),
     user=os.getenv('PG_USER'),
-    password=os.getenv('PG_PASS')
+    password=os.getenv('PG_PASSWORD')
 )
 cur = conn.cursor()
 cur.execute("""
