@@ -62,6 +62,7 @@ edf.setHeader({
     'admincode':            '',                # código administrativo
     'startdate':            fecha_inicio.timetuple()[:6],
     'sex':                  '',                # sexo del paciente
+    'birthdate':            '',                # fecha de nacimiento
 })
 
 
