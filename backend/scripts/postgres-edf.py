@@ -63,6 +63,7 @@ edf.setHeader({
     'startdate':            fecha_inicio.timetuple()[:6],
     'sex':                  '',                # sexo del paciente
     'birthdate':            '',                # fecha de nacimiento
+    'year':                 '',                # año de nacimiento
 })
 
 
