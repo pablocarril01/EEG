@@ -12,7 +12,7 @@ redis_host = os.getenv("REDIS_HOST")
 redis_port = os.getenv("REDIS_PORT")
 redis_password = os.getenv("REDIS_PASSWORD")
 
-paciente="datossonso" #input("Ingrese el nombre del paciente: ")
+paciente="5" #input("Ingrese el nombre del paciente: ")
 redis_key = "proyecto:PEPI:{}:datos".format(paciente)
 
 # Conectar a Redis
@@ -35,8 +35,19 @@ for entry in raw_data:
         # Separar los valores dentro del grupo por ','
         hex_values = group.split(",")
         if len(hex_values) == 8:  # Solo procesar grupos completos
-            milivolt_values = [round(((int(value, 16) - 32768) * 5 * 1e3) / 65536, 2) for value in hex_values]
-            processed_data.append(milivolt_values)
+            milivolt_values = []
+            for raw in hex_values:
+                v = raw.strip()                # elimina '\r', '\n', espacios...
+                if not v:                      # si queda cadena vacía, la saltamos
+                    continue
+                try:
+                    iv = int(v, 16)
+                except ValueError:
+                    # opcional: loguear o debug
+                    print(f"Ignorando valor inválido de hex: {repr(v)}")
+                    continue
+                mv = (iv - 32768) * 5e3 / 65536  # Convertir a milivoltios
+                milivolt_values.append(round(mv, 2))
 
 # Guardar en CSV
 csv_filename = "datos_pepi.csv"

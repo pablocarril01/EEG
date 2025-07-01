@@ -40,7 +40,7 @@ if not rows:
 
 # 2) Prepara parámetros EDF para 8 canales
 n_channels     = 8
-sample_rate    = 256  # ajusta a tu frecuencia real
+sample_rate    = 500
 labels         = ['fp1','fp2','t3','t4','o1','o2','c3','c4']
 phys_min       = [min(r[i+1] for r in rows) for i in range(n_channels)]
 phys_max       = [max(r[i+1] for r in rows) for i in range(n_channels)]

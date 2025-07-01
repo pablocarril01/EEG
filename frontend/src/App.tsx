@@ -82,7 +82,6 @@ const App: React.FC = () => {
           } else {
             setChartData(comprobacion.datos);
             setEstado("MOSTRANDO_CEROS");
-            setCicloCeros((prev) => prev + 1);
           }
         }
       }, 1500);
@@ -245,9 +244,6 @@ const App: React.FC = () => {
                 animationDuration={TIEMPO_ACTUALIZACION}
                 cicloCeros={cicloCeros}
               />
-              {estado === "MOSTRANDO_CEROS" && (
-                <div className="ciclo-ceros">Ciclos de cero: {cicloCeros}</div>
-              )}
             </div>
           )}
 

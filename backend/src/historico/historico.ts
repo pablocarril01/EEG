@@ -40,7 +40,7 @@ router.get('/', async (req: Request, res: Response) => {
 
   try {
     const { rows } = await pool.query(
-      `SELECT fp1, fp2, t3, t4, o1, o2, c3, c4
+      `SELECT ts, fp1, fp2, t3, t4, o1, o2, c3, c4
        FROM pepi
        WHERE id_paciente = $1
          AND ts BETWEEN $2 AND $3

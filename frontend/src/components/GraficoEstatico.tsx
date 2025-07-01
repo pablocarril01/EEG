@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from "react";
 
 interface GraficoEstaticoProps {
   data: number[][];
+  timestamps: number[];
   channelLabels?: string[];
   pixelsPerSample?: number;
   heightPerChannel?: number;
@@ -9,6 +10,7 @@ interface GraficoEstaticoProps {
 
 const GraficoEstatico: React.FC<GraficoEstaticoProps> = ({
   data,
+  timestamps,
   channelLabels = ["FP1", "FP2", "T3", "T4", "O1", "O2", "C3", "C4"],
   pixelsPerSample = 2,
   heightPerChannel = 100,
@@ -16,7 +18,8 @@ const GraficoEstatico: React.FC<GraficoEstaticoProps> = ({
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (!data || data.length === 0) return;
+    if (!data || data.length === 0 || !timestamps || timestamps.length === 0)
+      return;
 
     const canvas = canvasRef.current!;
     const ctx = canvas.getContext("2d")!;
@@ -24,7 +27,7 @@ const GraficoEstatico: React.FC<GraficoEstaticoProps> = ({
     const width = samples * pixelsPerSample;
     const height = data.length * heightPerChannel;
 
-    // Asigna tamaño al canvas
+    // Ajusta tamaño al canvas
     canvas.width = width;
     canvas.height = height;
 
@@ -70,7 +73,20 @@ const GraficoEstatico: React.FC<GraficoEstaticoProps> = ({
       });
       ctx.stroke();
     });
-  }, [data, pixelsPerSample, heightPerChannel, channelLabels]);
+
+    // Dibuja líneas verticales en gaps > 10 min
+    ctx.strokeStyle = "rgb(255, 0, 0)";
+    ctx.lineWidth = 1;
+    for (let i = 1; i < timestamps.length; i++) {
+      if (timestamps[i] - timestamps[i - 1] > 10 * 60 * 1000) {
+        const xGap = i * pixelsPerSample;
+        ctx.beginPath();
+        ctx.moveTo(xGap, 0);
+        ctx.lineTo(xGap, height);
+        ctx.stroke();
+      }
+    }
+  }, [data, timestamps, pixelsPerSample, heightPerChannel, channelLabels]);
 
   return (
     <div
