@@ -17,7 +17,7 @@ redis_port = int(os.getenv('REDIS_PORT', 6379))
 redis_password = os.getenv('REDIS_PASSWORD')
 
 # Parámetros de paciente y clave Redis
-paciente = 'Pablo'
+paciente = '5'
 redis_key = f"proyecto:PEPI:{paciente}:datos"
 
 # Conecta a Redis
