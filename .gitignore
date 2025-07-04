@@ -3,6 +3,7 @@
 .env.local
 .env.development
 .env.production
+.edf
 
 # Ignorar dependencias de Node.js
 node_modules/
